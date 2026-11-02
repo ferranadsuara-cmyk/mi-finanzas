@@ -99,6 +99,25 @@ html,body{width:100%;max-width:100%;margin:0;overflow-x:hidden}
   #finance-rebuild .fr-legend{flex-wrap:wrap}
   #finance-rebuild .fr-mobile-nav{width:100%;max-width:100%}
 }
+
+/* Ajuste fluido para móviles estrechos */
+@media(max-width:430px){
+#finance-rebuild{font-size:14px}
+#finance-rebuild .fr-main,#finance-rebuild .fr-top{padding-left:12px;padding-right:12px}
+#finance-rebuild .fr-head h1{font-size:clamp(21px,6vw,25px);line-height:1.18}
+#finance-rebuild .fr-card,#finance-rebuild .fr-panel{padding:13px}
+#finance-rebuild .fr-stats{gap:8px}
+#finance-rebuild .fr-stat-value{font-size:clamp(18px,5vw,22px)}
+#finance-rebuild .fr-btn{padding:9px 11px;font-size:12px}
+#finance-rebuild .fr-section-row{gap:8px;flex-wrap:wrap}
+#finance-rebuild .fr-calendar{gap:3px}
+#finance-rebuild .fr-day{padding:5px 2px;min-height:58px}
+}
+@media(max-width:360px){
+#finance-rebuild .fr-main,#finance-rebuild .fr-top{padding-left:9px;padding-right:9px}
+#finance-rebuild .fr-card,#finance-rebuild .fr-panel{padding:11px}
+#finance-rebuild .fr-stat-value{font-size:17px}
+}
 </style>
 <script>
 (()=>{
