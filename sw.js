@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mi-finanzas-v3';
+const CACHE_NAME = 'mi-finanzas-v4';
 const APP_FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', event => {
