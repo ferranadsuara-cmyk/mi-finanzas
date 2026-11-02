@@ -67,6 +67,43 @@ html{scroll-behavior:smooth}body{line-height:1.45;-webkit-font-smoothing:antiali
 @media(max-width:390px){#finance-rebuild .fr-stats{gap:8px}#finance-rebuild .fr-stat-value{font-size:20px}}
 </style>
 
+
+<style>
+/* Navegación móvil: separación y lectura cómoda */
+@media(max-width:680px){
+  .mobile-nav{
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    align-items:stretch;
+    justify-content:initial;
+    gap:0;
+    padding:9px 5px calc(9px + env(safe-area-inset-bottom));
+    min-height:76px;
+  }
+  .mobile-nav button{
+    width:100%;
+    min-width:0;
+    box-sizing:border-box;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    padding:5px 2px;
+    font-size:10px;
+    line-height:1.15;
+    text-align:center;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+  .mobile-nav button span{
+    display:block;
+    font-size:19px;
+    line-height:1;
+  }
+}
+</style>
+
 </head>
 <body><div class="app" id="app">
 <header class="topbar"><div class="brand"><div class="logo">↗</div><span>mi<span style="font-weight:400;opacity:.8">finanzas</span></span></div><div class="top-right"><span style="font-size:11px;opacity:.8" id="todayLabel"></span><input class="month-control" type="month" id="monthPicker" aria-label="Seleccionar mes"></div></header>
