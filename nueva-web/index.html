@@ -259,15 +259,24 @@ function budgetSetup(){let c=prompt('Categoría: '+cats.join(', '));if(!c)return
 function recurringSetup(){let n=prompt('Nombre del pago mensual:');if(!n)return;let amount=Number(prompt('Importe (€):'));let day=Number(prompt('Día del mes (1-31):','1'));if(amount<=0||day<1||day>31)return;let cat=prompt('Categoría','Suscripciones')||'Otros';data.recurring.push({id:Date.now(),desc:n,amount,day,cat,type:'out'});save();toast('Pago recurrente guardado');}
 document.addEventListener('click',e=>{let b=e.target.closest('button');if(!b)return;if(b.dataset.extra==='budget')budgetSetup();if(b.dataset.extra==='recurring')recurringSetup();if(b.dataset.extra==='backup')backupOut();});
 
+
+function createRecurringForMonth(){
+ const [yy,mm]=month.split('-').map(Number),last=new Date(yy,mm,0).getDate();
+ (data.recurring||[]).forEach(r=>{let date=month+'-'+String(Math.min(last,Number(r.day)||1)).padStart(2,'0');if(!data.tx.some(x=>x.recurringId===r.id&&x.date===date))data.tx.push({id:Date.now()+Math.floor(Math.random()*99999),type:'out',amount:Number(r.amount),date,cat:r.cat||'Otros',desc:r.desc+' (recurrente)',recurringId:r.id})});
+ save();
+}
+createRecurringForMonth();
 const baseHome=home,baseReports=reports;
 home=function(){
  baseHome();
  const t=sum(monthly()),limit=t.in*.5,left=Math.max(0,limit-t.out),now=new Date();
  const days=Math.max(1,new Date(now.getFullYear(),now.getMonth()+1,0).getDate()-now.getDate()+1);
  const p=limit?t.out/limit*100:0;
+ const categoryAlerts=Object.entries(data.budgets||{}).map(([c,n])=>{let spent=a=>a.filter(x=>x.type==='out'&&x.cat===c).reduce((v,x)=>v+x.amount,0);let v=spent(monthly());return v>=n?c+' ha superado su límite ('+eur(v)+' / '+eur(n)+')':v>=n*.75?c+' ha alcanzado el 75 % de su límite.':''}).filter(Boolean);
+
  const panel=document.createElement('div');panel.className='fr-panel fr-extra-tools';
  panel.innerHTML='<h3>Dinero disponible por día</h3><div class="fr-tool-big">'+eur(left/days)+'</div><p class="fr-sub">Puedes gastar aproximadamente esta cantidad cada día hasta final de mes y mantener tu objetivo de ahorro del 50 %.</p><div class="fr-tool-actions"><button class="fr-btn soft" data-extra="budget">Presupuestos por categoría</button><button class="fr-btn soft" data-extra="recurring">Añadir pago recurrente</button></div>';
- $('home').appendChild(panel);
+ $('home').appendChild(panel);if(categoryAlerts.length){let ca=document.createElement('div');ca.className='fr-alert show warn';ca.textContent=categoryAlerts.join(' · ');$('home').appendChild(ca)}
  if(t.in){let msg=p>=100?'Has superado tu presupuesto mensual.':p>=90?'Alerta: has gastado el '+Math.round(p)+' % del límite.':p>=75?'Aviso: has gastado el '+Math.round(p)+' % del límite.':'';if(msg){let a=document.createElement('div');a.className='fr-alert show '+(p>=90?'over':'warn');a.textContent=msg;$('home').appendChild(a)}}
 };
 reports=function(){
