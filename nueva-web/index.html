@@ -18,7 +18,56 @@ html{scroll-behavior:smooth}body{line-height:1.45;-webkit-font-smoothing:antiali
 .panel-head{min-width:0}.calendar-layout>.panel:first-child>.panel-head{display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:10px}.calendar-layout>.panel:first-child>.panel-head h3{white-space:nowrap;flex:1 1 auto;min-width:0;font-size:clamp(14px,2vw,17px)}.calendar-layout>.panel:first-child>.panel-head>div{display:flex;flex:0 0 auto;gap:7px;white-space:nowrap}.calendar-nav-btn{width:38px;min-width:38px;height:38px;padding:0!important;display:grid;place-items:center;font-size:23px!important;line-height:1;border-radius:10px}.day{transition:border-color .15s,background .15s,transform .15s}.day:hover{border-color:#75a68a;transform:translateY(-1px)}.day.selected{outline:2px solid var(--site-primary);outline-offset:1px}.weekday{font-size:11px;letter-spacing:.4px}.tx-table tbody tr:hover{background:light-dark(#f7faf7,#202c24)}.field input:focus,.field select:focus{outline:none}.empty{line-height:1.6}.mobile-nav{backdrop-filter:blur(14px);box-shadow:0 -5px 22px #102b1b0a}.mobile-nav button{min-width:54px}.mobile-nav button.active{color:var(--site-primary)}
 @media(max-width:680px){.main{padding-top:19px}.page-head{gap:10px}.page-head h1{font-size:24px}.page-head .btn{white-space:nowrap}.cards{gap:9px}.card,.panel{border-radius:14px}.calendar-layout>.panel:first-child{padding:13px}.calendar-layout>.panel:first-child>.panel-head{margin-bottom:13px}.calendar-layout>.panel:first-child>.panel-head h3{font-size:14px}.calendar-nav-btn{width:36px;min-width:36px;height:36px}.day{min-height:62px}.day.selected{outline-width:2px}.topbar{gap:8px}.top-right{gap:7px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
-</style></head>
+</style>
+<style>
+/* VERSION FINAL — identidad visual independiente */
+#finance-rebuild{--ink:#172b25;--muted:#718078;--green:#176b50;--mint:#e8f3ec;--line:#e2eae4;--paper:#fff;--red:#c96e5e;--shadow:0 14px 38px rgba(25,61,43,.065);background:#f5f7f3}
+#finance-rebuild .fr-top{height:72px;background:#102f27;padding-inline:clamp(18px,5vw,72px);box-shadow:0 8px 30px #102f2718}
+#finance-rebuild .fr-mark{background:#d6eadc;color:#174d39;border-radius:13px;font-weight:900}
+#finance-rebuild .fr-brand{letter-spacing:-.8px}
+#finance-rebuild .fr-shell{max-width:1600px;grid-template-columns:246px minmax(0,1fr);min-height:calc(100vh - 72px)}
+#finance-rebuild .fr-side{background:#fff;border-right:1px solid #e7ece7;padding:34px 19px}
+#finance-rebuild .fr-nav button{padding:14px 15px;border-radius:13px;transition:background .18s,color .18s,transform .18s}
+#finance-rebuild .fr-nav button:hover{transform:translateX(2px)}
+#finance-rebuild .fr-nav button.active{background:#e6f1e9;color:#155c43;box-shadow:inset 3px 0 #247b59}
+#finance-rebuild .fr-tip{background:#f0f5ed;border:1px solid #e3ecdf;border-radius:17px;color:#355b45;padding:18px}
+#finance-rebuild .fr-main{padding:clamp(24px,4vw,52px) clamp(18px,4vw,58px) 84px}
+#finance-rebuild .fr-head{margin-bottom:29px}
+#finance-rebuild .fr-kicker{color:#56816a;letter-spacing:1.8px}
+#finance-rebuild .fr-head h1{font-size:clamp(27px,3.2vw,39px);letter-spacing:-1.5px}
+#finance-rebuild .fr-sub{font-size:14px}
+#finance-rebuild .fr-card,#finance-rebuild .fr-panel{border:1px solid #e5ebe5;border-radius:20px;box-shadow:0 8px 28px rgba(28,61,43,.045);padding:21px}
+#finance-rebuild .fr-card:hover{border-color:#d2e2d6}
+#finance-rebuild .fr-stat-icon{border-radius:12px;background:#e9f3ec}
+#finance-rebuild .fr-stat-value{letter-spacing:-1.25px}
+#finance-rebuild .fr-btn{border-radius:12px;background:#176b50;box-shadow:0 6px 16px #176b5020;transition:transform .18s,box-shadow .18s}
+#finance-rebuild .fr-btn:hover{transform:translateY(-2px);box-shadow:0 9px 20px #176b5028}
+#finance-rebuild .fr-btn.soft{background:#e8f3ec;color:#176348;box-shadow:none}
+#finance-rebuild .fr-btn.line{border:1px solid #e1e9e2;background:#fff;color:#40574a;box-shadow:none}
+#finance-rebuild .fr-progress{background:#edf2ed}
+#finance-rebuild .fr-progress span{background:linear-gradient(90deg,#75b58b,#267653)}
+#finance-rebuild .fr-panel-head h3{font-size:16px}
+#finance-rebuild .fr-table-wrap,#finance-rebuild table{border-radius:14px;overflow:hidden}
+#finance-rebuild input,#finance-rebuild select{border-radius:10px}
+#finance-rebuild .fr-modal{border-radius:22px;box-shadow:0 25px 80px #102f2730}
+#finance-rebuild .fr-mobile-nav{background:#fff;border-top:1px solid #e6ece6;box-shadow:0 -8px 25px #102f270a}
+@media(max-width:800px){
+ #finance-rebuild .fr-shell{display:block;min-height:calc(100vh - 64px)}
+ #finance-rebuild .fr-top{height:64px;padding-inline:16px}
+ #finance-rebuild .fr-side{display:none}
+ #finance-rebuild .fr-main{padding:23px 15px 100px}
+ #finance-rebuild .fr-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ #finance-rebuild .fr-card,#finance-rebuild .fr-panel{padding:15px;border-radius:16px}
+ #finance-rebuild .fr-head{align-items:flex-start;flex-wrap:wrap}
+ #finance-rebuild .fr-head .fr-btn{width:100%}
+ #finance-rebuild .fr-charts{grid-template-columns:1fr}
+ #finance-rebuild .fr-date{display:none}
+ #finance-rebuild .fr-month{padding:8px;font-size:12px}
+}
+@media(max-width:390px){#finance-rebuild .fr-stats{gap:8px}#finance-rebuild .fr-stat-value{font-size:20px}}
+</style>
+
+</head>
 <body><div class="app" id="app">
 <header class="topbar"><div class="brand"><div class="logo">↗</div><span>mi<span style="font-weight:400;opacity:.8">finanzas</span></span></div><div class="top-right"><span style="font-size:11px;opacity:.8" id="todayLabel"></span><input class="month-control" type="month" id="monthPicker" aria-label="Seleccionar mes"></div></header>
 <div class="layout"><aside class="sidebar"><div class="nav-label">MENÚ PRINCIPAL</div><nav class="nav" id="sideNav"><button class="active" data-page="dashboard"><span class="ico">▦</span>Resumen</button><button data-page="movements"><span class="ico">⇄</span>Movimientos</button><button data-page="calendar"><span class="ico">▦</span>Calendario</button><button data-page="reports"><span class="ico">◫</span>Informes</button><button data-page="goals"><span class="ico">◎</span>Objetivos</button></nav><div class="side-note"><b>Tu regla 50/50</b><br>Reserva la mitad de cada euro que ingreses. La otra mitad es tu límite de gasto mensual.</div></aside>
