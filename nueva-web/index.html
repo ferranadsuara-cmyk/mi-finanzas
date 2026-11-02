@@ -104,6 +104,38 @@ html{scroll-behavior:smooth}body{line-height:1.45;-webkit-font-smoothing:antiali
 }
 </style>
 
+
+<style>
+/* Ajuste fino: etiquetas más pequeñas en la barra inferior */
+@media(max-width:680px){
+  #mobileNav{
+    display:grid !important;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:0 !important;
+    padding:6px 3px calc(6px + env(safe-area-inset-bottom)) !important;
+    align-items:center;
+  }
+  #mobileNav button{
+    min-width:0;
+    width:100%;
+    padding:3px 0 !important;
+    display:flex !important;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2px !important;
+    font-size:7px !important;
+    line-height:1.1 !important;
+    letter-spacing:-.15px;
+    white-space:nowrap;
+  }
+  #mobileNav button span{
+    font-size:14px !important;
+    line-height:1 !important;
+  }
+}
+</style>
+
 </head>
 <body><div class="app" id="app">
 <header class="topbar"><div class="brand"><div class="logo">↗</div><span>mi<span style="font-weight:400;opacity:.8">finanzas</span></span></div><div class="top-right"><span style="font-size:11px;opacity:.8" id="todayLabel"></span><input class="month-control" type="month" id="monthPicker" aria-label="Seleccionar mes"></div></header>
