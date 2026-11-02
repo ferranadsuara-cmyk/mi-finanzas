@@ -29,9 +29,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .day{transition:border-color .15s ease,background .15s ease,transform .15s ease}
 .day:hover{border-color:#78a68a;transform:translateY(-1px)}
 .day.selected{border-color:var(--site-primary)}
-.calendar-month-head{display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px}
-.calendar-month-head h3{font-size:clamp(16px,4.5vw,21px);font-weight:800;white-space:nowrap;min-width:0}
-.calendar-month-controls{display:flex;flex:0 0 auto;gap:7px}
+.calendar-month-head{display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:18px}
+.calendar-month-head h3{font-size:clamp(16px,4.5vw,21px);font-weight:800;white-space:nowrap;min-width:0;flex:1 1 auto}
+.calendar-month-controls{display:flex;flex:0 0 auto;flex-shrink:0;gap:6px;white-space:nowrap}
 .calendar-nav{display:inline-flex;align-items:center;justify-content:center;width:38px;min-width:38px;height:38px;padding:0!important;font-size:23px;line-height:1;font-weight:700}
 .field input,.field select{min-height:44px}
 .modal{animation:modalIn .18s ease both}
