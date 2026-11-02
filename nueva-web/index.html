@@ -171,7 +171,7 @@ html{scroll-behavior:smooth}body{line-height:1.45;-webkit-font-smoothing:antiali
 }
 </style>
 
-</head>
+<style>.fr-extra-tools{margin-top:16px}.fr-tool-big{font-size:32px;font-weight:750;color:#175b47;margin:12px 0}.fr-tool-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}@media(max-width:680px){.fr-tool-actions .fr-btn{flex:1 1 42%;font-size:11px}}</style></head>
 <body><div class="app" id="app">
 <header class="topbar"><div class="brand"><div class="logo">↗</div><span>mi<span style="font-weight:400;opacity:.8">finanzas</span></span></div><div class="top-right"><span style="font-size:11px;opacity:.8" id="todayLabel"></span><input class="month-control" type="month" id="monthPicker" aria-label="Seleccionar mes"></div></header>
 <div class="layout"><aside class="sidebar"><div class="nav-label">MENÚ PRINCIPAL</div><nav class="nav" id="sideNav"><button class="active" data-page="dashboard"><span class="ico">▦</span>Resumen</button><button data-page="movements"><span class="ico">⇄</span>Movimientos</button><button data-page="calendar"><span class="ico">▦</span>Calendario</button><button data-page="reports"><span class="ico">◫</span>Informes</button><button data-page="goals"><span class="ico">◎</span>Objetivos</button></nav><div class="side-note"><b>Tu regla 50/50</b><br>Reserva la mitad de cada euro que ingreses. La otra mitad es tu límite de gasto mensual.</div></aside>
@@ -258,6 +258,28 @@ function backupOut(){download('mi-finanzas-copia.json',JSON.stringify({data},nul
 function budgetSetup(){let c=prompt('Categoría: '+cats.join(', '));if(!c)return;let n=Number(prompt('Límite mensual para '+c+' (€)'));if(!cats.includes(c)||n<=0)return;data.budgets[c]=n;save();toast('Límite guardado');}
 function recurringSetup(){let n=prompt('Nombre del pago mensual:');if(!n)return;let amount=Number(prompt('Importe (€):'));let day=Number(prompt('Día del mes (1-31):','1'));if(amount<=0||day<1||day>31)return;let cat=prompt('Categoría','Suscripciones')||'Otros';data.recurring.push({id:Date.now(),desc:n,amount,day,cat,type:'out'});save();toast('Pago recurrente guardado');}
 document.addEventListener('click',e=>{let b=e.target.closest('button');if(!b)return;if(b.dataset.extra==='budget')budgetSetup();if(b.dataset.extra==='recurring')recurringSetup();if(b.dataset.extra==='backup')backupOut();});
+
+const baseHome=home,baseReports=reports;
+home=function(){
+ baseHome();
+ const t=sum(monthly()),limit=t.in*.5,left=Math.max(0,limit-t.out),now=new Date();
+ const days=Math.max(1,new Date(now.getFullYear(),now.getMonth()+1,0).getDate()-now.getDate()+1);
+ const p=limit?t.out/limit*100:0;
+ const panel=document.createElement('div');panel.className='fr-panel fr-extra-tools';
+ panel.innerHTML='<h3>Dinero disponible por día</h3><div class="fr-tool-big">'+eur(left/days)+'</div><p class="fr-sub">Puedes gastar aproximadamente esta cantidad cada día hasta final de mes y mantener tu objetivo de ahorro del 50 %.</p><div class="fr-tool-actions"><button class="fr-btn soft" data-extra="budget">Presupuestos por categoría</button><button class="fr-btn soft" data-extra="recurring">Añadir pago recurrente</button></div>';
+ $('home').appendChild(panel);
+ if(t.in){let msg=p>=100?'Has superado tu presupuesto mensual.':p>=90?'Alerta: has gastado el '+Math.round(p)+' % del límite.':p>=75?'Aviso: has gastado el '+Math.round(p)+' % del límite.':'';if(msg){let a=document.createElement('div');a.className='fr-alert show '+(p>=90?'over':'warn');a.textContent=msg;$('home').appendChild(a)}}
+};
+reports=function(){
+ baseReports();
+ const prevDate=new Date(month+'-01T12:00:00');prevDate.setMonth(prevDate.getMonth()-1);
+ const key=prevDate.toISOString().slice(0,7),a=sum(monthly()),b=sum(data.tx.filter(x=>x.date.startsWith(key))),diff=a.out-b.out;
+ const panel=document.createElement('div');panel.className='fr-panel fr-extra-tools';
+ panel.innerHTML='<h3>Comparación mensual</h3><p class="fr-sub">Gasto anterior ('+key+'): '+eur(b.out)+' · Este mes: '+eur(a.out)+'</p><strong class="'+(diff<=0?'fr-in':'fr-out')+'">'+(diff>0?'+':'')+eur(diff)+'</strong><p class="fr-sub">'+(diff<0?'Has gastado menos que el mes anterior.':diff>0?'Has gastado más que el mes anterior.':'Has gastado lo mismo.')+'</p><div class="fr-tool-actions"><button class="fr-btn soft" data-extra="budget">Configurar presupuestos</button><button class="fr-btn soft" data-extra="recurring">Añadir pago recurrente</button><button class="fr-btn soft" data-extra="backup">Exportar copia</button><button class="fr-btn line" data-extra="restore">Restaurar copia</button><input id="fr-restore-file" type="file" accept="application/json" hidden></div>';
+ $('reports').appendChild(panel);
+};
+document.addEventListener('click',e=>{let b=e.target.closest('button');if(b&&b.dataset.extra==='restore')document.getElementById('fr-restore-file').click()});
+document.addEventListener('change',e=>{if(e.target.id==='fr-restore-file'&&e.target.files[0]){let f=e.target.files[0],rd=new FileReader();rd.onload=()=>{try{let d=JSON.parse(rd.result).data;if(!Array.isArray(d.tx)||!Array.isArray(d.goals))throw 0;if(confirm('La copia sustituirá los datos actuales. ¿Continuar?')){data={...d,tx:d.tx,goals:d.goals};save();render();toast('Copia restaurada')}}catch(x){alert('Archivo de copia no válido')}};rd.readAsText(f)}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('#finance-rebuild .fr-modal-bg').forEach(x=>x.classList.remove('open'))});render();go('home');
 })();
 </script>
