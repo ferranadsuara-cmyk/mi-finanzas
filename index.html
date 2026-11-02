@@ -1,0 +1,274 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#173f36">
+<title>Mi Finanzas</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f2f6f2;color:#203329;font-family:Arial,sans-serif}
+header{background:#173f36;color:white;padding:20px;font-size:23px;font-weight:bold}
+main{max-width:900px;margin:auto;padding:16px;padding-bottom:90px}
+h2{font-size:19px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{background:white;padding:16px;border-radius:14px;box-shadow:0 2px 8px #0000000b}
+.label{font-size:12px;color:#78867d}
+.value{font-size:21px;font-weight:bold;margin-top:9px}
+.green{color:#16845b}.red{color:#d35e58}
+nav{display:flex;gap:6px;overflow:auto;margin:15px 0}
+nav button{flex:1;min-width:75px;padding:11px 7px;border:0;border-radius:9px;background:#dcebe3;color:#173f36;font-weight:bold}
+nav button.active{background:#173f36;color:white}
+.panel{background:white;padding:17px;border-radius:14px;margin:14px 0}
+input,select{width:100%;padding:12px;border:1px solid #dce5de;border-radius:9px;margin:5px 0 12px;background:white}
+button.primary{background:#173f36;color:white;border:0;padding:12px 16px;border-radius:9px;font-weight:bold}
+button.delete{background:#fbe9e7;color:#a63832;border:0;border-radius:7px;padding:7px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.progress{height:12px;background:#e8eee9;border-radius:20px;overflow:hidden;margin:12px 0}
+.progress div{height:100%;background:#4b9b75;width:0}
+small{color:#78867d}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td{padding:10px 4px;border-bottom:1px solid #edf1ed}
+.hidden{display:none}
+.transaction{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid #edf1ed}
+.transaction b{white-space:nowrap}
+#message{padding:10px;color:#16845b}
+@media(min-width:650px){.cards{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<header>↗ Mi Finanzas</header>
+<main>
+<nav>
+<button class="active" onclick="showPage('inicio',this)">Resumen</button>
+<button onclick="showPage('movimientos',this)">Movimientos</button>
+<button onclick="showPage('informes',this)">Informes</button>
+<button onclick="showPage('objetivos',this)">Ahorro</button>
+</nav>
+
+<section id="inicio">
+<h2>Tu resumen financiero</h2>
+<div class="panel">
+<label>Mes que quieres consultar</label>
+<input type="month" id="month" onchange="render()">
+</div>
+<div class="cards">
+<div class="card"><div class="label">Ingresos</div><div class="value green" id="income">0 €</div></div>
+<div class="card"><div class="label">Gastos</div><div class="value red" id="expenses">0 €</div></div>
+<div class="card"><div class="label">Ahorro acumulado</div><div class="value" id="saved">0 €</div></div>
+<div class="card"><div class="label">Disponible para gastar</div><div class="value" id="available">0 €</div></div>
+</div>
+<div class="panel">
+<h3>Tu regla del 50 %</h3>
+<p id="budgetText">La mitad de tus ingresos es tu límite de gasto.</p>
+<div class="progress"><div id="bar"></div></div>
+<div class="row"><small id="spent">Gastado: 0 €</small><small id="limit">Límite: 0 €</small></div>
+<p id="warning"></p>
+</div>
+<div class="panel">
+<h3>Actividad del mes</h3>
+<div id="monthlySummary"></div>
+</div>
+<div class="panel">
+<h3>Últimos movimientos</h3>
+<div id="recent"></div>
+</div>
+</section>
+
+<section id="movimientos" class="hidden">
+<h2>Registrar movimiento</h2>
+<div class="panel">
+<label>Tipo de movimiento</label>
+<select id="type">
+<option value="expense">Gasto</option>
+<option value="income">Ingreso</option>
+</select>
+<label>Cantidad en euros</label>
+<input type="number" id="amount" min="0.01" step="0.01" placeholder="Ej. 25">
+<label>Fecha</label>
+<input type="date" id="date">
+<label>Categoría</label>
+<select id="category">
+<option>Comida</option><option>Transporte</option>
+<option>Ocio</option><option>Compras</option>
+<option>Estudios</option><option>Suscripciones</option>
+<option>Salario</option><option>Regalos</option>
+<option>Hogar</option><option>Otros</option>
+</select>
+<label>Descripción</label>
+<input id="description" placeholder="Ej. Compra supermercado">
+<button class="primary" onclick="addTransaction()">Guardar movimiento</button>
+<div id="message"></div>
+</div>
+<div class="panel">
+<h3>Todos tus movimientos</h3>
+<div id="allTransactions"></div>
+</div>
+</section>
+
+<section id="informes" class="hidden">
+<h2>Informe mensual</h2>
+<div class="panel">
+<div id="report"></div>
+<button class="primary" onclick="exportCSV()">Exportar movimientos CSV</button>
+</div>
+</section>
+
+<section id="objetivos" class="hidden">
+<h2>Mis objetivos de ahorro</h2>
+<div class="panel">
+<label>Nombre del objetivo</label>
+<input id="goalName" placeholder="Ej. Comprar un ordenador">
+<label>Cantidad que quieres ahorrar (€)</label>
+<input id="goalTarget" type="number" min="1" placeholder="Ej. 1000">
+<label>Ya tienes ahorrado (€)</label>
+<input id="goalCurrent" type="number" min="0" placeholder="0">
+<button class="primary" onclick="addGoal()">Crear objetivo</button>
+</div>
+<div id="goals"></div>
+</section>
+</main>
+
+<script>
+const KEY="mifinanzas_v1";
+let data=JSON.parse(localStorage.getItem(KEY)||'{"transactions":[],"goals":[]}');
+
+function save(){
+ localStorage.setItem(KEY,JSON.stringify(data));
+}
+function euro(n){
+ return new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR"}).format(n||0);
+}
+function month(){
+ return document.getElementById("month").value;
+}
+function transactions(){
+ return data.transactions.filter(t=>t.date.startsWith(month()));
+}
+function totals(list){
+ let income=list.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+ let expenses=list.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
+ return {income,expenses,balance:income-expenses};
+}
+function showPage(id,button){
+ document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
+ document.getElementById(id).classList.remove("hidden");
+ document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+ button.classList.add("active");
+ render();
+}
+function addTransaction(){
+ let type=document.getElementById("type").value;
+ let amount=Number(document.getElementById("amount").value);
+ let date=document.getElementById("date").value;
+ let category=document.getElementById("category").value;
+ let description=document.getElementById("description").value.trim();
+ if(!amount||amount<=0||!date){
+  alert("Introduce una cantidad y una fecha válidas.");
+  return;
+ }
+ data.transactions.push({
+  id:Date.now(),type,amount,date,category,description
+ });
+ save();
+ document.getElementById("amount").value="";
+ document.getElementById("description").value="";
+ document.getElementById("message").textContent="Movimiento guardado correctamente.";
+ render();
+}
+function removeTransaction(id){
+ if(!confirm("¿Quieres eliminar este movimiento?"))return;
+ data.transactions=data.transactions.filter(t=>t.id!==id);
+ save();render();
+}
+function render(){
+ let list=transactions();
+ let t=totals(list);
+ let all=totals(data.transactions);
+ let budget=t.income*.5;
+ let available=budget-t.expenses;
+ document.getElementById("income").textContent=euro(t.income);
+ document.getElementById("expenses").textContent=euro(t.expenses);
+ document.getElementById("saved").textContent=euro(all.balance);
+ document.getElementById("available").textContent=euro(available);
+ document.getElementById("budgetText").textContent=
+  "Puedes gastar como máximo el 50 % de lo que ingreses este mes.";
+ document.getElementById("spent").textContent="Gastado: "+euro(t.expenses);
+ document.getElementById("limit").textContent="Límite: "+euro(budget);
+ document.getElementById("bar").style.width=
+  Math.min(100,budget>0?t.expenses/budget*100:0)+"%";
+ document.getElementById("warning").textContent=
+  t.income===0&&t.expenses>0?"Registra tus ingresos para calcular tu límite.":
+  available<0?"¡Has superado tu límite de gasto!":
+  t.income>0?"Te quedan "+euro(available)+" para gastar.":"";
+ document.getElementById("monthlySummary").innerHTML=
+  "<p>Ingresos: <b class='green'>"+euro(t.income)+"</b></p>"+
+  "<p>Gastos: <b class='red'>"+euro(t.expenses)+"</b></p>"+
+  "<p>Balance: <b>"+euro(t.balance)+"</b></p>";
+ let sorted=[...data.transactions].sort((a,b)=>b.date.localeCompare(a.date));
+ document.getElementById("recent").innerHTML=
+  sorted.slice(0,5).map(transactionHTML).join("")||"Todavía no hay movimientos.";
+ document.getElementById("allTransactions").innerHTML=
+  sorted.map(transactionHTML).join("")||"Todavía no hay movimientos.";
+ document.getElementById("report").innerHTML=
+  "<p>Ingresos del mes: <b>"+euro(t.income)+"</b></p>"+
+  "<p>Gastos del mes: <b>"+euro(t.expenses)+"</b></p>"+
+  "<p>Ahorro del mes: <b>"+euro(t.balance)+"</b></p>"+
+  "<p>Objetivo mínimo de ahorro: <b>"+euro(budget)+"</b></p>"+
+  "<p>Porcentaje ahorrado: <b>"+(t.income?(t.balance/t.income*100).toFixed(1):0)+" %</b></p>"+
+  "<p>Gasto medio diario: <b>"+euro(t.expenses/(new Date(month()+"-01T12:00:00").getMonth()===new Date().getMonth()?new Date().getDate():30))+"</b></p>";
+ renderGoals();
+}
+function transactionHTML(t){
+ return `<div class="transaction">
+ <div><b>${t.description||t.category}</b><br>
+ <small>${t.date} · ${t.category} · ${t.type==="income"?"Ingreso":"Gasto"}</small></div>
+ <div><b class="${t.type==="income"?"green":"red"}">${t.type==="income"?"+":"−"}${euro(t.amount)}</b><br>
+ <button class="delete" onclick="removeTransaction(${t.id})">Eliminar</button></div>
+ </div>`;
+}
+function addGoal(){
+ let name=document.getElementById("goalName").value.trim();
+ let target=Number(document.getElementById("goalTarget").value);
+ let current=Number(document.getElementById("goalCurrent").value)||0;
+ if(!name||target<=0||current<0){alert("Completa correctamente los datos.");return;}
+ data.goals.push({id:Date.now(),name,target,current});
+ save();
+ document.getElementById("goalName").value="";
+ document.getElementById("goalTarget").value="";
+ document.getElementById("goalCurrent").value="";
+ renderGoals();
+}
+function removeGoal(id){
+ if(!confirm("¿Eliminar este objetivo?"))return;
+ data.goals=data.goals.filter(g=>g.id!==id);
+ save();renderGoals();
+}
+function renderGoals(){
+ document.getElementById("goals").innerHTML=data.goals.map(g=>{
+  let pct=Math.min(100,g.current/g.target*100);
+  return `<div class="panel">
+  <div class="row"><b>${g.name}</b>
+  <button class="delete" onclick="removeGoal(${g.id})">Eliminar</button></div>
+  <p>${euro(g.current)} de ${euro(g.target)}</p>
+  <div class="progress"><div style="width:${pct}%"></div></div>
+  <small>${pct.toFixed(0)} % completado · Faltan ${euro(Math.max(0,g.target-g.current))}</small>
+  </div>`;
+ }).join("")||'<div class="panel">Todavía no tienes objetivos de ahorro.</div>';
+}
+function exportCSV(){
+ let rows=[["Fecha","Tipo","Cantidad","Categoría","Descripción"]];
+ data.transactions.forEach(t=>rows.push([t.date,t.type,t.amount,t.category,t.description||""]));
+ let csv="\ufeff"+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(";")).join("\n");
+ let a=document.createElement("a");
+ a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+ a.download="mis-finanzas.csv";a.click();
+ URL.revokeObjectURL(a.href);
+}
+document.getElementById("month").value=new Date().toISOString().slice(0,7);
+document.getElementById("date").value=new Date().toISOString().slice(0,10);
+render();
+</script>
+</body>
+</html>
