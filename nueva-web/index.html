@@ -273,6 +273,55 @@ html{scroll-behavior:smooth}body{line-height:1.45;-webkit-font-smoothing:antiali
   }
 }
 </style>
+
+<style id="fr-mobile-nav-actual-fix">
+@media (max-width: 680px) {
+  #finance-rebuild nav#fr-mobile-nav,
+  nav#fr-mobile-nav.fr-mobile-nav {
+    display:grid !important;
+    grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+    align-items:center !important;
+    justify-content:stretch !important;
+    gap:0 !important;
+    width:100% !important;
+    box-sizing:border-box !important;
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom)) !important;
+  }
+  nav#fr-mobile-nav.fr-mobile-nav > button {
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:center !important;
+    justify-content:center !important;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    box-sizing:border-box !important;
+    margin:0 !important;
+    padding:3px 1px !important;
+    gap:3px !important;
+    font-size:10px !important;
+    line-height:1.1 !important;
+    white-space:normal !important;
+    overflow:hidden !important;
+    text-align:center !important;
+  }
+  nav#fr-mobile-nav.fr-mobile-nav > button > .fr-nav-icon {
+    display:block !important;
+    font-size:18px !important;
+    line-height:1 !important;
+  }
+  nav#fr-mobile-nav.fr-mobile-nav > button > .fr-nav-label {
+    display:block !important;
+    width:100% !important;
+    font-size:10px !important;
+    line-height:1.1 !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:clip !important;
+    text-align:center !important;
+  }
+}
+</style>
 </head>
 <body><div class="app" id="app">
 <header class="topbar"><div class="brand"><div class="logo">↗</div><span>mi<span style="font-weight:400;opacity:.8">finanzas</span></span></div><div class="top-right"><span style="font-size:11px;opacity:.8" id="todayLabel"></span><input class="month-control" type="month" id="monthPicker" aria-label="Seleccionar mes"></div></header>
@@ -334,7 +383,7 @@ const KEY='mifinanzas_v3';let data;try{data=JSON.parse(localStorage.getItem(KEY)
 const cats=['Comida','Transporte','Ocio','Compras','Suscripciones','Estudios','Regalos','Hogar','Salud','Viajes','Salario','Otros'];let month=new Date().toISOString().slice(0,7),page='home',view='daily',selected=new Date().toISOString().slice(0,10),tipTimer;
 const $=id=>document.getElementById('fr-'+id),eur=n=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(Number(n)||0),safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),save=()=>localStorage.setItem(KEY,JSON.stringify(data)),sum=a=>({in:a.filter(x=>x.type==='in').reduce((s,x)=>s+x.amount,0),out:a.filter(x=>x.type==='out').reduce((s,x)=>s+x.amount,0)}),monthly=()=>data.tx.filter(x=>x.date.startsWith(month)),toast=s=>{let n=$('toast');n.textContent=s;n.hidden=false;clearTimeout(tipTimer);tipTimer=setTimeout(()=>n.hidden=true,2200)};
 document.body.insertAdjacentHTML('beforeend',`<div id="finance-rebuild"><header class="fr-top"><div class="fr-brand"><div class="fr-mark">↗</div><span>mi<span style="font-weight:400;opacity:.78">finanzas</span></span></div><div class="fr-top-right"><span class="fr-date" id="fr-today"></span><input class="fr-month" id="fr-month" type="month" aria-label="Seleccionar mes"></div></header><div class="fr-shell"><aside class="fr-side"><div class="fr-nav-label">TU ESPACIO</div><nav class="fr-nav" id="fr-side-nav"></nav><div class="fr-tip"><b>Tu regla 50/50</b><br>Guarda la mitad de lo que ingreses. La otra mitad marca tu límite de gasto mensual.</div></aside><main class="fr-main"><section class="fr-page active" id="fr-home"></section><section class="fr-page" id="fr-moves"></section><section class="fr-page" id="fr-calendar-page"></section><section class="fr-page" id="fr-reports"></section><section class="fr-page" id="fr-goals"></section></main></div><nav class="fr-mobile-nav" id="fr-mobile-nav"></nav><div class="fr-modal-bg" id="fr-tx-modal"><div class="fr-modal"><div class="fr-modal-head"><h2 id="fr-tx-title">Añadir movimiento</h2><button class="fr-icon-btn" data-close="tx">✕</button></div><form id="fr-tx-form"><input type="hidden" id="fr-tx-id"><div class="fr-form-grid"><div class="fr-field"><label>Tipo</label><select id="fr-tx-type"><option value="out">Gasto</option><option value="in">Ingreso</option></select></div><div class="fr-field"><label>Importe (€)</label><input id="fr-tx-amount" type="number" min="0.01" step="0.01" placeholder="0,00" required></div><div class="fr-field"><label>Fecha</label><input id="fr-tx-date" type="date" required></div><div class="fr-field"><label>Categoría</label><select id="fr-tx-cat"></select></div><div class="fr-field full"><label>Descripción (opcional)</label><input id="fr-tx-desc" maxlength="90" placeholder="Ej. Compra semanal"></div></div><div class="fr-modal-foot"><button type="button" class="fr-btn line" data-close="tx">Cancelar</button><button class="fr-btn">Guardar movimiento</button></div></form></div></div><div class="fr-modal-bg" id="fr-goal-modal"><div class="fr-modal"><div class="fr-modal-head"><h2 id="fr-goal-title">Nuevo objetivo</h2><button class="fr-icon-btn" data-close="goal">✕</button></div><form id="fr-goal-form"><input type="hidden" id="fr-goal-id"><div class="fr-form-grid"><div class="fr-field full"><label>Nombre del objetivo</label><input id="fr-goal-name" maxlength="60" placeholder="Ej. Viaje de verano" required></div><div class="fr-field"><label>Meta (€)</label><input id="fr-goal-target" type="number" min="1" step="0.01" required></div><div class="fr-field"><label>Ahorrado (€)</label><input id="fr-goal-current" type="number" min="0" step="0.01" value="0"></div></div><div class="fr-modal-foot"><button type="button" class="fr-btn line" data-close="goal">Cancelar</button><button class="fr-btn">Guardar objetivo</button></div></form></div></div><div class="fr-toast" id="fr-toast" hidden></div></div>`);
-const nav=[['home','▦','Resumen'],['moves','⇄','Movimientos'],['calendar-page','▦','Calendario'],['reports','◫','Informes'],['goals','◎','Objetivos']];$('side-nav').innerHTML=nav.map(([id,ic,n])=>`<button data-page="${id}"><i>${ic}</i>${n}</button>`).join('');$('mobile-nav').innerHTML=nav.map(([id,ic,n])=>`<button data-page="${id}"><span>${ic}</span>${n}</button>`).join('');$('month').value=month;$('today').textContent=new Date().toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});$('tx-cat').innerHTML=cats.map(c=>`<option>${c}</option>`).join('');
+const nav=[['home','▦','Resumen'],['moves','⇄','Movimientos'],['calendar-page','▦','Calendario'],['reports','◫','Informes'],['goals','◎','Objetivos']];$('side-nav').innerHTML=nav.map(([id,ic,n])=>`<button data-page="${id}"><i>${ic}</i>${n}</button>`).join('');$('mobile-nav').innerHTML=nav.map(([id,ic,n])=>`<button type="button" data-page="${id}"><span class="fr-nav-icon">${ic}</span><span class="fr-nav-label">${n}</span></button>`).join('');$('month').value=month;$('today').textContent=new Date().toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});$('tx-cat').innerHTML=cats.map(c=>`<option>${c}</option>`).join('');
 function go(p){page=p;document.querySelectorAll('#finance-rebuild .fr-page').forEach(x=>x.classList.toggle('active',x.id==='fr-'+p));document.querySelectorAll('#finance-rebuild [data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===p));render();window.scrollTo(0,0)}
 function head(k,t,s,btn=''){return `<div class="fr-head"><div><div class="fr-kicker">${k}</div><h1>${t}</h1><div class="fr-sub">${s}</div></div>${btn}</div>`}function card(label,value,foot,icon,cls=''){return `<div class="fr-card"><div class="fr-stat-label">${label}<span class="fr-stat-icon">${icon}</span></div><div class="fr-stat-value ${cls}">${value}</div><div class="fr-stat-foot">${foot}</div></div>`}
 function table(arr,actions=true){if(!arr.length)return '<div class="fr-empty">Todavía no hay movimientos.<br>Añade tu primer ingreso o gasto para empezar a ver tus estadísticas.</div>';return `<div class="fr-table-wrap"><table class="fr-table"><thead><tr><th>Movimiento</th><th>Fecha</th><th>Categoría</th><th style="text-align:right">Importe</th>${actions?'<th></th>':''}</tr></thead><tbody>${arr.map(x=>`<tr><td><b>${safe(x.desc||x.cat)}</b><div class="fr-muted" style="font-size:10px;margin-top:3px">${x.type==='in'?'Ingreso':'Gasto'}</div></td><td>${new Date(x.date+'T12:00:00').toLocaleDateString('es-ES')}</td><td>${safe(x.cat)}</td><td class="fr-amount ${x.type==='in'?'fr-in':'fr-out'}">${x.type==='in'?'+':'−'}${eur(x.amount)}</td>${actions?`<td class="fr-actions"><button class="fr-icon-btn" data-edit-tx="${x.id}" aria-label="Editar">✎</button><button class="fr-icon-btn" data-del-tx="${x.id}" aria-label="Eliminar">⌫</button></td>`:''}</tr>`).join('')}</tbody></table></div>`}
