@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mi-finanzas-v26';
+const CACHE_NAME = 'mi-finanzas-v27';
 const APP_FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg', './jarvis-worker.js'];
 
 self.addEventListener('install', event => {
