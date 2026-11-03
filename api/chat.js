@@ -146,10 +146,21 @@ export default async function handler(req, res) {
         })
       });
 
-      const result = await upstream.json();
+      const upstreamText = await upstream.text();
+      let result;
+      try {
+        result = JSON.parse(upstreamText);
+      } catch {
+        console.error("OpenAI devolvió una respuesta no JSON", upstream.status);
+        return res.status(502).json({ error: "El servicio de IA ha devuelto una respuesta inesperada. Inténtalo de nuevo más tarde." });
+      }
       if (!upstream.ok) {
         console.error("OpenAI API error", upstream.status, result);
-        return res.status(502).json({ error: "La IA no ha podido responder. Comprueba la configuración de OpenAI." });
+        const code = result?.error?.code;
+        if (upstream.status === 429 && (code === "insufficient_quota" || code === "credit_balance_exhausted")) {
+          return res.status(503).json({ error: "J.A.R.V.I.S. está bien conectado, pero la cuenta de OpenAI API no tiene créditos disponibles. Añade saldo o revisa la facturación en platform.openai.com/settings/organization/billing y vuelve a intentarlo." });
+        }
+        return res.status(502).json({ error: "La IA no ha podido responder (HTTP " + upstream.status + "). Revisa la configuración de OpenAI." });
       }
       response = result;
       const calls = (result.output || []).filter(item => item.type === "function_call");
