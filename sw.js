@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mi-finanzas-v25';
+const CACHE_NAME = 'mi-finanzas-v26';
 const APP_FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg', './jarvis-worker.js'];
 
 self.addEventListener('install', event => {
@@ -17,7 +17,6 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const requestUrl = new URL(event.request.url);
   if (requestUrl.origin !== self.location.origin) {
-    // Cachea el runtime estático de Transformers.js para reutilizarlo tras la primera carga.
     if (requestUrl.origin !== 'https://cdn.jsdelivr.net') return;
     event.respondWith(caches.open('mi-finanzas-ai-runtime-v1').then(async cache => {
       const cached = await cache.match(event.request);
