@@ -35,9 +35,8 @@ self.onmessage = async (event) => {
       const startedAt = performance.now();
       self.postMessage({ type: 'activity', state: 'thinking' });
       const output = await generator(data.messages || [], {
-        max_new_tokens: 180,
-        do_sample: true,
-        temperature: 0.65,
+        max_new_tokens: 72,
+        do_sample: false,
         repetition_penalty: 1.12
       });
       const generated = output && output[0] ? output[0].generated_text : '';
