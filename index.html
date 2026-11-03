@@ -283,14 +283,14 @@ async function scanReceipt(file){
   const worker=await mod.createWorker('spa',1,{logger:m=>{if(m.status==='recognizing text')status.textContent='Leyendo recibo… '+Math.round((m.progress||0)*100)+' %'}});
   const result=await worker.recognize(file);await worker.terminate();
   const raw=result.data.text||'';if(!raw.trim())throw new Error('No he podido leer el texto. Prueba con una foto más nítida y bien iluminada.');
-  const lines=raw.split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean);
+  const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
   const amountCandidates=[];
-  for(const line of lines){const matches=[...line.matchAll(/(?:€\\s*)?(\\d{1,4}(?:[.,]\\d{2})|\\d{1,4})\\s*(?:€|EUR)?/gi)];for(const m of matches){const v=Number(m[1].replace(',','.'));if(v>0&&v<100000)amountCandidates.push({value:v,line,score:/total|importe|a pagar|tarjeta|total eur/i.test(line)?3:/subtotal/i.test(line)?1:0})}}
+  for(const line of lines){const matches=[...line.matchAll(/(?:€\s*)?(\d{1,4}(?:[.,]\d{2})|\d{1,4})\s*(?:€|EUR)?/gi)];for(const m of matches){const v=Number(m[1].replace(',','.'));if(v>0&&v<100000)amountCandidates.push({value:v,line,score:/total|importe|a pagar|tarjeta|total eur/i.test(line)?3:/subtotal/i.test(line)?1:0})}}
   amountCandidates.sort((a,b)=>b.score-a.score);const amount=amountCandidates[0]?.value;
   let date=new Date().toISOString().slice(0,10);
-  const dm=raw.match(/\\b(\\d{1,2})[\\/. -](\\d{1,2})[\\/. -](\\d{2,4})\\b/);
+  const dm=raw.match(/\b(\d{1,2})[\/. -](\d{1,2})[\/. -](\d{2,4})\b/);
   if(dm){let yy=Number(dm[3]);if(yy<100)yy+=2000;const mm=Number(dm[2]),dd=Number(dm[1]);if(mm>=1&&mm<=12&&dd>=1&&dd<=31)date=yy+'-'+String(mm).padStart(2,'0')+'-'+String(dd).padStart(2,'0')}
-  const merchant=lines.find(x=>x.length>2&&!/^(factura|ticket|recibo|copia|fecha|hora|cif|nif|www\\.|http|tel[eé]fono)/i.test(x)&&!/[0-9]{5,}/.test(x))||'';
+  const merchant=lines.find(x=>x.length>2&&!/^(factura|ticket|recibo|copia|fecha|hora|cif|nif|www\.|http|tel[eé]fono)/i.test(x)&&!/[0-9]{5,}/.test(x))||'';
   const lower=raw.toLowerCase();let cat='Otros';
   if(/supermerc|aliment|mercadona|carrefour|lidl|aldi|consum|panader|restaurante|caf[eé]|bar /.test(lower))cat='Comida';
   else if(/gasolin|combustible|metro|autob[uú]s|taxi|parking|renfe|cercan[ií]as/.test(lower))cat='Transporte';
