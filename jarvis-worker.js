@@ -18,9 +18,9 @@ self.onmessage = async (event) => {
         progress_callback: (progress) => {
           if (progress && progress.status === 'progress') {
             const percent = Number.isFinite(progress.progress) ? Math.round(progress.progress) : null;
-            self.postMessage({ type: 'progress', message: percent === null ? 'Descargando archivos del modelo…' : 'Descargando modelo local… ' + percent + '%' });
+            self.postMessage({ type: 'progress', message: percent === null ? 'Descargando archivos del modelo…' : 'Descargando modelo local… ' + percent + '%', progress: { file: progress.file || progress.name || 'modelo', loaded: progress.loaded, total: progress.total } });
           } else if (progress && progress.status) {
-            self.postMessage({ type: 'progress', message: 'Preparando modelo: ' + progress.status });
+            self.postMessage({ type: 'progress', message: 'Preparando modelo: ' + progress.status, progress: { file: progress.file || progress.name || 'modelo', loaded: progress.loaded, total: progress.total } });
           }
         }
       });
@@ -32,6 +32,8 @@ self.onmessage = async (event) => {
   }
   if (data.type === 'generate' && generator) {
     try {
+      const startedAt = performance.now();
+      self.postMessage({ type: 'activity', state: 'thinking' });
       const output = await generator(data.messages || [], {
         max_new_tokens: 180,
         do_sample: true,
@@ -45,9 +47,11 @@ self.onmessage = async (event) => {
         const last = generated.filter(item => item && item.role === 'assistant').pop();
         answer = last ? (typeof last.content === 'string' ? last.content : JSON.stringify(last.content)) : '';
       }
-      self.postMessage({ type: 'result', id: data.id, text: answer });
+      self.postMessage({ type: 'result', id: data.id, text: answer, durationMs: performance.now() - startedAt });
+      self.postMessage({ type: 'activity', state: 'idle' });
     } catch (error) {
       self.postMessage({ type: 'error', id: data.id, message: error && error.message ? error.message : 'Error generando respuesta local' });
+      self.postMessage({ type: 'activity', state: 'idle' });
     }
   }
 };
