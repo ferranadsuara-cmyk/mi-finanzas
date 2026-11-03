@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- App cache release: v27 -->
+<!-- App cache release: v29 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="theme-color" content="#173f36">
@@ -296,29 +296,49 @@ async function scanReceipt(file){
  const status=$('receipt-status');if(!file)return;
  if(!file.type.startsWith('image/')){toast('Selecciona una imagen del recibo');return}
  status.textContent='Preparando reconocimiento de texto…';
+ let worker=null;
  try{
   const mod=await import('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.esm.min.js');
-  const worker=await mod.createWorker('spa',1,{logger:m=>{if(m.status==='recognizing text')status.textContent='Leyendo recibo… '+Math.round((m.progress||0)*100)+' %'}});
-  const result=await worker.recognize(file);await worker.terminate();
-  const raw=result.data.text||'';if(!raw.trim())throw new Error('No he podido leer el texto. Prueba con una foto más nítida y bien iluminada.');
-  const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  worker=await mod.createWorker('spa',1,{logger:m=>{if(m.status==='recognizing text')status.textContent='Leyendo recibo… '+Math.round((m.progress||0)*100)+' %'}});
+  const result=await worker.recognize(file);await worker.terminate();worker=null;
+  const raw=String(result.data.text||'').replace(/\u00a0/g,' ');if(!raw.trim())throw new Error('No he podido leer el texto. Prueba con una foto más nítida, recta y bien iluminada.');
+  const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   const amountCandidates=[];
-  for(const line of lines){const matches=[...line.matchAll(/(?:€\s*)?(\d{1,4}(?:[.,]\d{2})|\d{1,4})\s*(?:€|EUR)?/gi)];for(const m of matches){const v=Number(m[1].replace(',','.'));if(v>0&&v<100000)amountCandidates.push({value:v,line,score:/total|importe|a pagar|tarjeta|total eur/i.test(line)?3:/subtotal/i.test(line)?1:0})}}
-  amountCandidates.sort((a,b)=>b.score-a.score);const amount=amountCandidates[0]?.value;
-  let date=new Date().toISOString().slice(0,10);
-  const dm=raw.match(/\b(\d{1,2})[\/. -](\d{1,2})[\/. -](\d{2,4})\b/);
-  if(dm){let yy=Number(dm[3]);if(yy<100)yy+=2000;const mm=Number(dm[2]),dd=Number(dm[1]);if(mm>=1&&mm<=12&&dd>=1&&dd<=31)date=yy+'-'+String(mm).padStart(2,'0')+'-'+String(dd).padStart(2,'0')}
-  const merchant=lines.find(x=>x.length>2&&!/^(factura|ticket|recibo|copia|fecha|hora|cif|nif|www\.|http|tel[eé]fono)/i.test(x)&&!/[0-9]{5,}/.test(x))||'';
-  const lower=raw.toLowerCase();let cat='Otros';
+  for(let i=0;i<lines.length;i++){
+   const line=lines[i],n=norm(line),matches=[...line.matchAll(/(?:€\s*)?(\d{1,3}(?:[.\s]\d{3})*(?:[,.]\d{2})|\d+(?:[,.]\d{2})?)\s*(?:€|eur)?/gi)];
+   for(const m of matches){
+    let token=m[1].replace(/\s/g,'');
+    if(/[.,]\d{3}$/.test(token))token=token.replace(/[.,]/g,'');
+    else if(token.includes(',')&&token.includes('.'))token=token.lastIndexOf(',')>token.lastIndexOf('.')?token.replace(/\./g,'').replace(',','.'):token.replace(/,/g,'');
+    else token=token.replace(',','.');
+    const v=Number(token);if(!(v>0&&v<100000))continue;
+    let score=0;
+    if(/\b(total|importe total|total a pagar|a pagar|total eur|total €|grand total|amount due)\b/.test(n))score+=12;
+    if(/\b(subtotal|base imponible|iva|impuesto|vuelto|cambio|ahorro|descuento|unitario|precio\/kg|cantidad|efectivo entregado)\b/.test(n))score-=9;
+    if(/\b(tarjeta|visa|mastercard|efectivo)\b/.test(n))score-=3;
+    if(/[€]|eur/i.test(m[0]))score+=2;
+    if(/\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}/.test(line))score-=4;
+    if(i===lines.length-1)score+=1;
+    amountCandidates.push({value:v,line,score,index:i});
+   }
+  }
+  amountCandidates.sort((a,b)=>b.score-a.score||b.index-a.index);
+  const best=amountCandidates[0],amount=best&&best.score>=2?best.value:null;
+  let date=null;
+  const dateRe=/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})\b/g;let dm;
+  while((dm=dateRe.exec(raw))){let yy=Number(dm[3]);if(yy<100)yy+=2000;const mm=Number(dm[2]),dd=Number(dm[1]),dt=new Date(yy,mm-1,dd);if(mm>=1&&mm<=12&&dd>=1&&dd<=31&&dt.getFullYear()===yy&&dt.getMonth()===mm-1&&dt.getDate()===dd){date=yy+'-'+String(mm).padStart(2,'0')+'-'+String(dd).padStart(2,'0');break}}
+  const excluded=/^(factura|ticket|recibo|copia|fecha|hora|cif|nif|www\.|http|telefono|tel[eé]fono|cliente|caja|operacion|forma de pago|gracias|total|subtotal|iva|base imponible)/i;
+  const merchant=lines.find(x=>x.length>2&&!excluded.test(norm(x))&&!/\d{5,}/.test(x)&&!/\b\d+[,.]\d{2}\b/.test(x)&&!/^[\d\s*#:/.-]+$/.test(x))||'';
+  const lower=norm(raw);let cat='Otros';
   if(/supermerc|aliment|mercadona|carrefour|lidl|aldi|consum|panader|restaurante|caf[eé]|bar /.test(lower))cat='Comida';
-  else if(/gasolin|combustible|metro|autob[uú]s|taxi|parking|renfe|cercan[ií]as/.test(lower))cat='Transporte';
+  else if(/gasolin|combustible|metro|autobus|taxi|parking|renfe|cercanias/.test(lower))cat='Transporte';
   else if(/cine|teatro|concierto|ocio|steam|playstation/.test(lower))cat='Ocio';
-  else if(/farmacia|cl[ií]nica|hospital|parafarmacia/.test(lower))cat='Salud';
+  else if(/farmacia|clinica|hospital|parafarmacia/.test(lower))cat='Salud';
   else if(/ropa|zara|decathlon|amazon|tienda|compra/.test(lower))cat='Compras';
-  if(!amount){status.textContent='He leído el recibo, pero no he identificado con seguridad el importe. Puedes introducirlo manualmente.'}
-  else status.textContent='Recibo leído. Revisa los datos detectados antes de guardar.';
-  openTx();$('tx-type').value='out';$('tx-amount').value=amount?amount.toFixed(2):'';$('tx-date').value=date;$('tx-cat').value=cat;$('tx-desc').value='Recibo · '+(merchant||'Compra');$('tx-place').value=merchant;
- }catch(err){status.textContent='No se pudo leer el recibo: '+err.message;toast('No se ha podido escanear el recibo')}
+  const confidence=Number(result.data.confidence||0),confidenceText=Number.isFinite(confidence)?' · Lectura OCR '+Math.round(confidence)+' %':'';
+  status.textContent=amount?'Importe sugerido '+eur(amount)+(best?.score<8?' · Confianza del importe baja; compruébalo':'')+confidenceText+'. Revisa todos los datos antes de guardar.':'Texto leído, pero no he identificado con suficiente seguridad el total. Introduce el importe manualmente.'+confidenceText;
+  openTx();$('tx-type').value='out';$('tx-amount').value=amount?amount.toFixed(2):'';$('tx-date').value=date||new Date().toISOString().slice(0,10);$('tx-cat').value=cat;$('tx-desc').value='Recibo · '+(merchant||'Compra');$('tx-place').value=merchant;
+ }catch(err){if(worker){try{await worker.terminate()}catch(_){}}status.textContent='No se pudo leer el recibo: '+(err&&err.message||'error inesperado');toast('No se ha podido escanear el recibo')}
 }
 document.addEventListener('change',e=>{if(e.target?.id!=='fr-receipt-file')return;const f=e.target.files?.[0];if(f)scanReceipt(f);e.target.value=''});document.addEventListener('input',e=>{if(e.target.id==='fr-move-search'){moveSearch=e.target.value;const box=$('move-results');if(box)box.innerHTML=table(filterMoves(monthly().sort((a,b)=>b.date.localeCompare(a.date)||String(b.id).localeCompare(String(a.id)))));}});document.addEventListener('change',e=>{if(e.target.id==='fr-move-category'){moveCategory=e.target.value;moves()}if(e.target.id==='fr-move-type'){moveType=e.target.value;moves()}});
 document.addEventListener('submit',e=>{if(e.target.id==='fr-recurring-form'){e.preventDefault();const name=$('rec-name').value.trim(),amount=Number($('rec-amount').value),day=Number($('rec-day').value);if(!name||!(amount>0)||day<1||day>31)return;data.recurring.push({id:String(Date.now()),name,amount:Math.round(amount*100)/100,day,cat:$('rec-cat').value,type:'out',active:true,startMonth:new Date().toISOString().slice(0,7)});save();render();toast('Pago mensual añadido');return}if(e.target.id==='fr-chat-form'){e.preventDefault();const v=$('chat-text').value.trim();$('chat-text').value='';askFinance(v)}});document.addEventListener('change',e=>{if(e.target.matches('[data-pref]')){const key=e.target.dataset.pref;if(key==='notifications'&&e.target.checked&&'Notification'in window&&Notification.permission==='default'){Notification.requestPermission().then(p=>{navPrefs.notifications=p==='granted';saveNavPrefs();toast(p==='granted'?'Avisos activados':'El navegador no ha concedido permiso')});return}navPrefs[key]=e.target.checked;saveNavPrefs();return}if(e.target.matches('[data-category-budget]')){const c=e.target.dataset.categoryBudget,v=Math.max(0,Number(e.target.value)||0);if(v)data.categoryBudgets[c]=v;else delete data.categoryBudgets[c];save();render();return}if(e.target.matches('[data-setting]')){navPrefs[e.target.dataset.setting]=e.target.value;saveNavPrefs();return}if(e.target.matches('[data-nav-pref]')){navPrefs[e.target.dataset.navPref]=e.target.checked;saveNavPrefs();return}if(e.target.matches('[data-rec-toggle]')){const r=data.recurring.find(x=>String(x.id)===e.target.dataset.recToggle);if(r){r.active=e.target.checked;save();render();toast(r.active?'Pago mensual activado':'Pago mensual desactivado')}}});document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('#finance-rebuild .fr-modal-bg').forEach(x=>x.classList.remove('open'))});try{go('home')}catch(err){console.error('Error inicializando inicio:',err);showBootFailure('Mi Finanzas no ha podido cargar el inicio',(err&&err.stack)||String(err&&err.message||err))}window.addEventListener('load',()=>{if(!$('home').innerHTML.trim())go('home')});window.addEventListener('pageshow',()=>{if(!$('home').innerHTML.trim())go('home')});if(conversation.length){conversation.forEach(m=>addChat(m.role,m.content))}else addChat('assistant','¡Hola! Soy J.A.R.V.I.S., tu asistente local. Puedo analizar tus finanzas, ayudarte a organizar tu presupuesto y preparar propuestas de movimientos. ¿Qué hacemos?');
