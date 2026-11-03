@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mi-finanzas-v12';
+const CACHE_NAME = 'mi-finanzas-v13';
 const APP_FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg', './jarvis-worker.js'];
 
 self.addEventListener('install', event => {
@@ -8,7 +8,7 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
+    caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME && key !== 'transformers-cache' && key !== 'mi-finanzas-ai-runtime-v1').map(key => caches.delete(key))))
   );
   self.clients.claim();
 });
