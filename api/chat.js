@@ -34,7 +34,7 @@ export default async function handler(req, res) {
         "Authorization": "Bearer " + process.env.OPENAI_API_KEY,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ model: "gpt-6-luna", instructions, input, max_output_tokens: 900 })
+      body: JSON.stringify({ model: "gpt-4.1-mini", instructions, input, max_output_tokens: 900 })
     });
     const result = await upstream.json();
     if (!upstream.ok) {
