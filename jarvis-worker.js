@@ -1,4 +1,4 @@
-import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2';
+import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1';
 
 // J.A.R.V.I.S. Local: inferencia dentro del navegador, sin API de IA.
 const MODEL_ID = 'onnx-community/SmolLM2-135M-Instruct-ONNX-MHA';
