@@ -16,6 +16,7 @@ export default async function handler(req, res) {
     const history = Array.isArray(body.history) ? body.history.slice(-12).filter(x =>
       x && ["user", "assistant"].includes(x.role) && typeof x.content === "string"
     ).map(x => ({ role: x.role, content: x.content.slice(0, 3000) })) : [];
+    if (history.length && history[history.length - 1].role === "user" && history[history.length - 1].content === message) history.pop();
     const instructions = [
       "Eres el asistente financiero personal integrado en Mi Finanzas. Habla siempre en español, con tono cercano, claro y práctico.",
       "Analiza exclusivamente los datos financieros facilitados por el usuario. No inventes movimientos ni saldos. Si faltan datos, dilo claramente.",
