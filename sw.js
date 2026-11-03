@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mi-finanzas-v11';
+const CACHE_NAME = 'mi-finanzas-v12';
 const APP_FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg', './jarvis-worker.js'];
 
 self.addEventListener('install', event => {
@@ -14,7 +14,20 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
+  if (event.request.method !== 'GET') return;
+  const requestUrl = new URL(event.request.url);
+  if (requestUrl.origin !== self.location.origin) {
+    // Cachea el runtime estático de Transformers.js para reutilizarlo tras la primera carga.
+    if (requestUrl.origin !== 'https://cdn.jsdelivr.net') return;
+    event.respondWith(caches.open('mi-finanzas-ai-runtime-v1').then(async cache => {
+      const cached = await cache.match(event.request);
+      if (cached) return cached;
+      const response = await fetch(event.request);
+      if (response.ok) await cache.put(event.request, response.clone());
+      return response;
+    }).catch(() => caches.match(event.request)));
+    return;
+  }
   if (event.request.mode === 'navigate') {
     event.respondWith(fetch(event.request).then(response => {
       const copy = response.clone();
