@@ -12,6 +12,12 @@ test('detecta búsquedas web y comparación de precios',()=>{
  assert.equal(web.detect('Compara precios de un robot aspirador').shopping,true);
  assert.equal(web.detect('Compara precios de una cafetera DeLonghi').query,'una cafetera DeLonghi');
  assert.equal(web.detect('¿Qué tiempo hace?'),null);
+ assert.equal(web.detect('Investiga quién es Marie Curie').shopping,false);
+ assert.equal(web.detect('¿Qué ha pasado hoy en el mundo?').shopping,false);
+ assert.equal(web.detect('Busca información sobre la historia de la informática').query,'información sobre la historia de la informática');
+ assert.equal(web.detect('Busca en internet quién es el actual presidente de Francia').shopping,false);
+ assert.equal(web.detect('¿Cuáles son las últimas noticias de tecnología?').shopping,false);
+ assert.equal(web.detect('Explícame qué es la fotosíntesis'),null);
  assert.equal(web.detect('Compara mis gastos con el mes anterior'),null);
  assert.equal(web.detect('Busca información sobre cómo funciona un robot aspirador').shopping,false);
 });
