@@ -1,6 +1,13 @@
 package com.mifinanzas.jarvis
 
 import android.app.Activity
+import android.Manifest
+import android.content.pm.PackageManager
+import android.speech.RecognizerIntent
+import android.speech.RecognitionListener
+import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
+import java.util.Locale
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -46,12 +53,18 @@ class MainActivity : Activity() {
     private var engine: Engine? = null
     private var conversation: Conversation? = null
     private var busy = false
+    private var speechRecognizer: SpeechRecognizer? = null
+    private var textToSpeech: TextToSpeech? = null
+    private var speechReady = false
+    private var pendingListen = false
+    private val audioPermissionRequest = 4108
     private val modelFile: File
         get() = File(getExternalFilesDir(null) ?: filesDir, modelName)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         buildUi()
+        initVoiceEngines()
         refreshModelState()
     }
 
@@ -301,6 +314,21 @@ class MainActivity : Activity() {
 
     inner class NativeJarvisBridge {
         @JavascriptInterface
+        fun startListening() { runOnUiThread { startVoiceRecognition() } }
+
+        @JavascriptInterface
+        fun stopListening() { runOnUiThread { speechRecognizer?.cancel(); deliverSpeechState("idle", "Escucha detenida.") } }
+
+        @JavascriptInterface
+        fun speak(text: String) { runOnUiThread { speakText(text) } }
+
+        @JavascriptInterface
+        fun stopSpeaking() { runOnUiThread { textToSpeech?.stop() } }
+
+        @JavascriptInterface
+        fun voiceAvailable(): Boolean = speechRecognizer != null && textToSpeech != null
+
+        @JavascriptInterface
         fun isReady(): Boolean = conversation != null && !busy
 
         @JavascriptInterface
@@ -382,6 +410,93 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun initVoiceEngines() {
+        if (SpeechRecognizer.isRecognitionAvailable(this)) {
+            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this).also { recognizer ->
+                recognizer.setRecognitionListener(object : RecognitionListener {
+                    override fun onReadyForSpeech(params: Bundle?) { deliverSpeechState("listening", "Te escucho…") }
+                    override fun onBeginningOfSpeech() { deliverSpeechState("listening", "Te escucho…") }
+                    override fun onRmsChanged(rmsdB: Float) { }
+                    override fun onBufferReceived(buffer: ByteArray?) { }
+                    override fun onEndOfSpeech() { deliverSpeechState("processing", "Entendiendo…") }
+                    override fun onError(error: Int) {
+                        val message = when (error) {
+                            SpeechRecognizer.ERROR_NO_MATCH -> "No he entendido lo que has dicho."
+                            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No he detectado voz."
+                            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Falta permiso para usar el micrófono."
+                            SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "El servicio de reconocimiento no tiene conexión."
+                            else -> "No se ha podido reconocer la voz (código $error)."
+                        }
+                        deliverSpeechState("error", message)
+                    }
+                    override fun onResults(results: Bundle?) {
+                        val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
+                        if (text.isNotBlank()) {
+                            val quoted = JSONObject.quote(text)
+                            runOnUiThread { webView.evaluateJavascript("window.onJarvisSpeechResult && window.onJarvisSpeechResult($quoted);", null) }
+                        }
+                        deliverSpeechState("idle", if (text.isBlank()) "No he detectado palabras." else "Voz reconocida.")
+                    }
+                    override fun onPartialResults(partialResults: Bundle?) {
+                        val text = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
+                        if (text.isNotBlank()) {
+                            val quoted = JSONObject.quote(text)
+                            runOnUiThread { webView.evaluateJavascript("window.onJarvisSpeechPartial && window.onJarvisSpeechPartial($quoted);", null) }
+                        }
+                    }
+                    override fun onEvent(eventType: Int, params: Bundle?) { }
+                })
+            }
+        }
+        textToSpeech = TextToSpeech(this) { result ->
+            speechReady = result == TextToSpeech.SUCCESS
+            if (speechReady) textToSpeech?.language = Locale("es", "ES")
+        }
+    }
+
+    private fun startVoiceRecognition() {
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            pendingListen = true
+            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), audioPermissionRequest)
+            return
+        }
+        val recognizer = speechRecognizer
+        if (recognizer == null) { deliverSpeechState("error", "No hay un servicio de reconocimiento de voz instalado."); return }
+        try {
+            recognizer.cancel()
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-ES")
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "es-ES")
+                putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+                putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, false)
+                putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
+            }
+            recognizer.startListening(intent)
+        } catch (e: Exception) { deliverSpeechState("error", e.message ?: "No se pudo iniciar el micrófono.") }
+    }
+
+    private fun speakText(text: String) {
+        if (!speechReady || textToSpeech == null) { deliverSpeechState("error", "La voz todavía no está preparada."); return }
+        textToSpeech?.speak(text.take(5000), TextToSpeech.QUEUE_FLUSH, null, "jarvis-" + System.currentTimeMillis())
+        deliverSpeechState("speaking", "JARVIS está hablando…")
+    }
+
+    private fun deliverSpeechState(state: String, message: String) {
+        val a = JSONObject.quote(state); val b = JSONObject.quote(message)
+        runOnUiThread { if (::webView.isInitialized) webView.evaluateJavascript("window.onJarvisVoiceState && window.onJarvisVoiceState($a,$b);", null) }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == audioPermissionRequest) {
+            val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+            if (granted && pendingListen) { pendingListen = false; startVoiceRecognition() }
+            else { pendingListen = false; deliverSpeechState("error", "Necesito permiso de micrófono para escucharte.") }
+        }
+    }
+
     private fun sendPrompt() {
         val text = prompt.text.toString().trim()
         if (text.isEmpty() || busy) return
@@ -414,6 +529,9 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         fileChooserCallback?.onReceiveValue(null)
+        speechRecognizer?.destroy()
+        textToSpeech?.stop()
+        textToSpeech?.shutdown()
         scope.cancel()
         conversation?.close()
         engine?.close()
