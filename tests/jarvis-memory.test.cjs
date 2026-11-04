@@ -251,3 +251,14 @@ test('mantiene conversaciones independientes por proyecto y las restaura', () =>
   assert.equal(restored.getProjectConversation(a.project.id).length, 2);
   assert.equal(restored.getProjectConversation(b.project.id)[0].content, 'Preparar el presupuesto');
 });
+
+
+test('bloquea credenciales y normaliza entradas de tareas y chat de proyecto', () => {
+  const memory = createMemory();
+  const project = memory.createProject('Privado');
+  assert.equal(memory.addProjectTask(project.project.id, '  Preparar   pruebas  ').task.title, 'Preparar pruebas');
+  assert.equal(memory.addProjectTask(project.project.id, 'Mi password es secreto').ok, false);
+  assert.equal(memory.addProjectMessage(project.project.id, 'user', 'Mi contraseña es secreto').ok, false);
+  assert.equal(memory.addProjectMessage(project.project.id, 'user', 'Revisar el diseño').ok, true);
+  assert.equal(memory.getProjectConversation(project.project.id).length, 1);
+});
