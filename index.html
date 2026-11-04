@@ -292,11 +292,11 @@ function resolveAssistantAction(id,confirmed){const a=pendingAssistantActions[id
 async function handleJarvisProductAnalysis(question){
  const q=String(question||'').trim();
  const compare=/compara.*(?:características|caracteristicas|especificaciones|modelos).*productos|compara.*productos.*(?:características|caracteristicas|especificaciones)/i.test(q);
- const single=q.match(/(?:analiza|examina|lee|extrae|detalla)\\s+(?:las características de |las especificaciones de )?(?:el )?(primer|segundo|tercer|\\d+)\\s+producto/i);
+ const single=q.match(/(?:analiza|examina|lee|extrae|detalla)\s+(?:las características de |las especificaciones de )?(?:el )?(primer|segundo|tercer|\d+)\s+producto/i);
  if(!compare&&!single)return null;
  if(!window.JarvisWeb||!window.JarvisWeb.inspect)return 'El analizador de páginas todavía no está disponible.';
  if(!jarvisLastWebResults.length)return 'Primero busca los productos que quieres analizar y después pídeme que compare sus características.';
- const selected=compare?jarvisLastWebResults.slice(0,4):[jarvisLastWebResults[/segundo/i.test(single[1])?1:/tercer/i.test(single[1])?2:/\\d+/.test(single[1])?Math.max(0,Number(single[1])-1):0]].filter(Boolean);
+ const selected=compare?jarvisLastWebResults.slice(0,4):[jarvisLastWebResults[/segundo/i.test(single[1])?1:/tercer/i.test(single[1])?2:/\d+/.test(single[1])?Math.max(0,Number(single[1])-1):0]].filter(Boolean);
  if(!selected.length)return 'No encuentro ese resultado en la última búsqueda.';
  wait.textContent='Abriendo las páginas públicas y extrayendo las características disponibles…';
  const details=await Promise.all(selected.map(async item=>{try{const product=await window.JarvisWeb.inspect(item.url);item.productDetails=product;try{window.JarvisProducts.save({...item,...product,title:product.title||item.title,price:product.price===null?item.price:product.price,store:item.store})}catch(_){}return {store:item.store,url:item.url,searchTitle:item.title,...product}}catch(e){return {store:item.store,url:item.url,searchTitle:item.title,error:e.message}}}));
