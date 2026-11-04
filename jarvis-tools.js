@@ -39,9 +39,10 @@
       return {ok:true,value:round(values[0])};
     }catch(e){return {ok:false,error:e.message||'Operación no válida.'}}
   }
+  function rowsForMonth(ctx,key){const transactions=ctx.transactions||[],recurring=ctx.recurring||[];const rows=transactions.filter(x=>String(x.date||'').startsWith(key));const [y,m]=key.split('-').map(Number);recurring.filter(r=>r.active&&r.startMonth<=key).forEach(r=>{const day=Math.min(Number(r.day)||1,new Date(y,m,0).getDate());rows.push({id:'rec-'+r.id+'-'+key,type:r.type,amount:r.amount,date:key+'-'+String(day).padStart(2,'0'),cat:r.cat||'Otros',desc:(r.name||'Pago recurrente')+' · Pago recurrente',recurring:true})});return rows}
   function execute(name,args,ctx){
     const month=ctx.month,transactions=ctx.transactions||[],recurring=ctx.recurring||[],goals=ctx.goals||[],budgets=ctx.budgets||{},savingRate=Number(ctx.savingRate)||50;
-    const current=transactions.filter(x=>String(x.date||'').startsWith(month));
+    const current=rowsForMonth(ctx,month);
     const income=round(current.filter(x=>x.type==='in').reduce((s,x)=>s+Number(x.amount||0),0));
     const expense=round(current.filter(x=>x.type==='out').reduce((s,x)=>s+Number(x.amount||0),0));
     const balance=round(income-expense);
@@ -53,7 +54,7 @@
       return rows.length?'Tus principales categorías de gasto en '+monthLabel(month)+':\n'+rows.map((x,i)=>(i+1)+'. '+x[0]+': '+money(x[1])).join('\n'):'No hay gastos registrados este mes para comparar categorías.';
     }
     if(name==='compare_months'){
-      const previous=previousMonth(month),prior=transactions.filter(x=>String(x.date||'').startsWith(previous)),priorExpense=round(prior.filter(x=>x.type==='out').reduce((s,x)=>s+Number(x.amount||0),0)),delta=round(expense-priorExpense);
+      const previous=previousMonth(month),prior=rowsForMonth(ctx,previous),priorExpense=round(prior.filter(x=>x.type==='out').reduce((s,x)=>s+Number(x.amount||0),0)),delta=round(expense-priorExpense);
       return 'Comparación de gastos:\n'+monthLabel(month)+': '+money(expense)+'\n'+monthLabel(previous)+': '+money(priorExpense)+'\n'+(delta>0?'Has gastado '+money(delta)+' más.':delta<0?'Has gastado '+money(-delta)+' menos.':'Has gastado lo mismo.')+'\nComparación basada en movimientos registrados.';
     }
     if(name==='recurring_payments'){
