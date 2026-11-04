@@ -32,7 +32,7 @@
   function list(storage){return read(storage)}
   function compare(ids,storage){
     const items=read(storage),selected=Array.isArray(ids)&&ids.length?items.filter(x=>ids.includes(x.id)||ids.includes(x.url)):items;
-    return selected.map(x=>({title:x.title,store:x.store,price:x.price,currency:x.currency,url:x.url,checkedAt:x.checkedAt||x.savedAt}));
+    return selected.map(x=>({title:x.title,store:x.store,price:x.price,currency:x.currency,brand:x.brand,model:x.model,description:x.description,specifications:x.specifications,availability:x.availability,url:x.url,checkedAt:x.checkedAt||x.savedAt}));
   }
   function exportData(storage){return list(storage)}
   function importData(data,storage){if(!Array.isArray(data))return 0;const cleanItems=data.map(normalize).filter(Boolean).slice(0,LIMIT);write(cleanItems,storage);return cleanItems.length}
