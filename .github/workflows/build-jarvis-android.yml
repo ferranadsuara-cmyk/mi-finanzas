@@ -1,4 +1,4 @@
-name: Build JARVIS Android test APK
+name: Build Mi Finanzas with JARVIS Android APK
 on:
   workflow_dispatch:
   push:
