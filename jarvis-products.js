@@ -5,7 +5,7 @@
   function safeUrl(value){try{const u=new URL(String(value||''));return ['http:','https:'].includes(u.protocol)?u.toString():null}catch(_){return null}}
   function parseEuroPrice(text){
     const s=String(text||'').replace(/\u00a0/g,' ');
-    const m=s.match(/(?:€\s*(\d{1,6}(?:[.,]\d{1,2})?)|(\d{1,6}(?:[.,]\d{1,2})?)\s*(?:€|euros?))/i);
+    const m=s.match(/(?:€\s*((?:\d{1,3}(?:\.\d{3})+|\d+)(?:,\d{1,2})?)|((?:\d{1,3}(?:\.\d{3})+|\d+)(?:,\d{1,2})?)\s*(?:€|euros?))/i);
     if(!m)return null;
     const raw=(m[1]||m[2]).replace(/\./g,'').replace(',','.');
     const n=Number(raw);return Number.isFinite(n)&&n>0?n:null;
