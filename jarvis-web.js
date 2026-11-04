@@ -8,7 +8,7 @@
   if(!trigger)return null;
   let query=original.replace(/^[¿¡\s]+|[?!\s]+$/g,'').replace(/^(?:jarvis[, ]*)?(?:busca(?:me)?|buscar|encuentra(?:me)?|investiga(?:me)?|compara(?:me)?(?: los)? precios de|compara precios de|dime donde comprar|donde puedo comprar|donde comprar|cuanto cuesta|cuanto valen|quiero comprar(?:me)?|me quiero comprar|estoy buscando)\s*/i,'').replace(/\b(?:en internet|por internet|en la web|en tiendas online|en tiendas)\b/ig,'').trim();
   if(!query)query=original;
-  const shopping=/\b(precio|precios|comprar|comprarme|tienda|tiendas|oferta|ofertas|barato|barata|baratos|baratas|coste|cuesta|valen|auriculares|movil|portatil|televisor|zapatillas|nevera|lavadora|consola)\b/i.test(original);
+  const shopping=/\b(precio|precios|comprar|comprarme|compra|tienda|tiendas|sucursal|sucursales|oferta|ofertas|barato|barata|baratos|baratas|coste|cuesta|valen|descuento|rebaja|stock|disponible|comparar|comparame|recomiendame|recomienda|mejor precio|donde sale|vale)\b/i.test(original)||/\b(?:quiero|me quiero|necesito|busco|estoy buscando|me recomiendas)\s+(?:comprar|comprarme|un|una|unos|unas|el|la|los|las)\b/i.test(q);
   return {query:query.slice(0,180),shopping};
  }
  function getLocation(){try{return localStorage.getItem(LOCATION_KEY)||''}catch(_){return ''}}
