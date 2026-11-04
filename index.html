@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- App cache release: v31 -->
+<!-- App cache release: v32 -->
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="theme-color" content="#173f36">
@@ -89,6 +89,126 @@ html{scroll-behavior:smooth}body{line-height:1.45;-webkit-font-smoothing:antiali
 .panel-head{min-width:0}.calendar-layout>.panel:first-child>.panel-head{display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:10px}.calendar-layout>.panel:first-child>.panel-head h3{white-space:nowrap;flex:1 1 auto;min-width:0;font-size:clamp(14px,2vw,17px)}.calendar-layout>.panel:first-child>.panel-head>div{display:flex;flex:0 0 auto;gap:7px;white-space:nowrap}.calendar-nav-btn{width:38px;min-width:38px;height:38px;padding:0!important;display:grid;place-items:center;font-size:23px!important;line-height:1;border-radius:10px}.day{transition:border-color .15s,background .15s,transform .15s}.day:hover{border-color:#75a68a;transform:translateY(-1px)}.day.selected{outline:2px solid var(--site-primary);outline-offset:1px}.weekday{font-size:11px;letter-spacing:.4px}.tx-table tbody tr:hover{background:light-dark(#f7faf7,#202c24)}.field input:focus,.field select:focus{outline:none}.empty{line-height:1.6}.mobile-nav{backdrop-filter:blur(14px);box-shadow:0 -5px 22px #102b1b0a}.mobile-nav button{min-width:54px}.mobile-nav button.active{color:var(--site-primary)}
 @media(max-width:680px){.main{padding-top:19px}.page-head{gap:10px}.page-head h1{font-size:24px}.page-head .btn{white-space:nowrap}.cards{gap:9px}.card,.panel{border-radius:14px}.calendar-layout>.panel:first-child{padding:13px}.calendar-layout>.panel:first-child>.panel-head{margin-bottom:13px}.calendar-layout>.panel:first-child>.panel-head h3{font-size:14px}.calendar-nav-btn{width:36px;min-width:36px;height:36px}.day{min-height:62px}.day.selected{outline-width:2px}.topbar{gap:8px}.top-right{gap:7px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+
+/* Mi Finanzas · sistema visual refinado v2 */
+:root{
+ --site-primary:#17634b;--site-secondary:#e8f2ec;--site-background:#f7f9f7;
+ --site-on-primary:#fff;--site-on-secondary:#174c3a;--site-on-background:#18251f;
+ --line:#e7ece8;--paper:#fff;
+}
+html{scroll-behavior:smooth}
+body{background:#f4f7f5;letter-spacing:-.01em;-webkit-font-smoothing:antialiased}
+#app{min-height:100vh;background:#f7f9f7}
+#app .topbar{
+ position:sticky;top:0;z-index:20;min-height:72px;padding:14px clamp(18px,4vw,52px);
+ background:rgba(23,73,57,.96);backdrop-filter:blur(16px);
+ box-shadow:0 1px 0 rgba(255,255,255,.09),0 8px 28px rgba(20,48,35,.08)
+}
+#app .brand{font-size:19px;letter-spacing:-.8px}
+#app .logo{width:39px;height:39px;border-radius:13px;background:rgba(255,255,255,.13);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+#app .month-control{border-radius:10px;background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.2);min-height:39px}
+#app .layout{max-width:1600px;grid-template-columns:232px minmax(0,1fr);min-height:calc(100vh - 72px)}
+#app .sidebar{padding:30px 17px;background:#fbfcfb;border-right:1px solid #e9eeea}
+#app .nav-label{padding:0 12px 14px;color:#96a39a;font-size:9px;letter-spacing:1.35px}
+#app .nav{gap:5px}
+#app .nav button{min-height:43px;padding:11px 13px;border-radius:11px;color:#66766c;font-size:13px;transition:background .18s,color .18s,transform .18s}
+#app .nav button:hover{background:#f0f5f1;color:#245a43;transform:translateX(2px)}
+#app .nav button.active{background:#eaf3ed;color:#17634b;box-shadow:inset 3px 0 #27815e;font-weight:750}
+#app .nav .ico{font-size:16px}
+#app .side-note{margin:34px 4px 0;padding:15px;background:#edf5ef;border:1px solid #e1ece4;border-radius:13px;color:#41624f;font-size:11px}
+#app .main{padding:34px clamp(18px,3.2vw,48px) 64px}
+#app .page-head{align-items:center;margin-bottom:27px}
+#app .eyebrow{font-size:9px;letter-spacing:1.4px;color:#829188}
+#app .page-head h1{font-size:clamp(25px,2.5vw,32px);letter-spacing:-1.15px;font-weight:760;color:#1c2d24}
+#app .page-head .muted{color:#839087;line-height:1.5}
+#app .btn{min-height:39px;padding:10px 15px;border-radius:10px;background:#17634b;box-shadow:0 3px 8px rgba(23,99,75,.12);font-size:12px;transition:transform .16s,box-shadow .16s,background .16s}
+#app .btn:hover{background:#12533e;box-shadow:0 6px 15px rgba(23,99,75,.18);transform:translateY(-1px)}
+#app .btn.secondary{background:#eaf3ed;color:#225b43;box-shadow:none}
+#app .btn.secondary:hover{background:#deece3}
+#app .btn.ghost{background:#fff;color:#52645a;border:1px solid #e3eae5;box-shadow:none}
+#app .cards{gap:13px;margin-bottom:17px}
+#app .card,#app .panel{border:1px solid #e8ede9;border-radius:15px;background:#fff;box-shadow:0 2px 10px rgba(27,52,36,.025);transition:border-color .18s,box-shadow .18s,transform .18s}
+#app .card{padding:19px}
+#app .card:hover{border-color:#dce8df;box-shadow:0 7px 22px rgba(27,52,36,.055);transform:translateY(-1px)}
+#app .panel{padding:20px}
+#app .stat-top{color:#718077;font-size:11px}
+#app .stat-icon{width:32px;height:32px;border-radius:10px;background:#edf5ef;color:#28704f}
+#app .stat-value{font-size:clamp(22px,2.2vw,28px);letter-spacing:-1px;color:#20382b}
+#app .stat-sub{font-size:10px;color:#8b978f;line-height:1.5}
+#app .progress-panel{padding:21px 22px}
+#app .progress{height:8px;background:#edf2ee}
+#app .progress>span{background:linear-gradient(90deg,#277d59,#62a77e)}
+#app .panel-head{margin-bottom:16px}
+#app .panel h3{font-size:13px;font-weight:750;color:#293b30}
+#app .section-row{margin:27px 0 13px}
+#app .section-row h2{font-size:15px;letter-spacing:-.25px;color:#293b30}
+#app .table-wrap{border-radius:10px}
+#app .tx-table{font-size:11px}
+#app .tx-table th{font-size:9px;letter-spacing:.8px;color:#98a39b;padding-bottom:12px}
+#app .tx-table td{padding:13px 9px;border-top-color:#f0f3f0}
+#app .tx-table tbody tr:hover{background:#fafcfb}
+#app .tx-name{font-weight:700;color:#304238}
+#app .field input,#app .field select{border-color:#e2e9e4;border-radius:10px;background:#fbfcfb;min-height:42px}
+#app .field input:focus,#app .field select:focus{border-color:#6b9c7e;box-shadow:0 0 0 3px rgba(65,132,91,.11)}
+#app .modal{border:1px solid #e7ede8;border-radius:18px;box-shadow:0 24px 80px rgba(12,30,19,.2)}
+#app .toast{background:#174c3a;border-radius:10px}
+#app .day{border-color:#e8eee9;border-radius:10px;transition:border-color .15s,background .15s}
+#app .day:hover{border-color:#9bbda6;background:#f7fbf8}
+#app .day.selected{outline:0;border-color:#4d906a;background:#eaf3ed;color:#245b42}
+#app .goal-card{min-height:150px}
+#app .mobile-nav{box-shadow:0 -5px 20px rgba(25,48,34,.06);backdrop-filter:blur(16px);border-top-color:#e8eee9}
+#app .mobile-nav button{font-size:9px;min-width:52px}
+#app .mobile-nav button.active{color:#17634b}
+#finance-rebuild{border-radius:18px}
+#finance-rebuild .fr-panel,#finance-rebuild .fr-card{border-radius:14px;box-shadow:0 2px 12px rgba(25,48,34,.035)}
+#finance-rebuild input,#finance-rebuild select,#finance-rebuild textarea{border-radius:10px}
+@media(max-width:950px){
+ #app .layout{grid-template-columns:190px minmax(0,1fr)}
+ #app .main{padding:27px 20px 60px}
+}
+@media(max-width:680px){
+ #app .topbar{position:relative;min-height:62px;padding:11px 14px}
+ #app .brand{font-size:17px}
+ #app .logo{width:35px;height:35px}
+ #app .main{padding:23px 13px 100px}
+ #app .page-head{gap:12px;align-items:flex-start}
+ #app .page-head h1{font-size:24px;line-height:1.18}
+ #app .page-head .muted{font-size:11px!important}
+ #app .page-head .btn{white-space:nowrap;padding:9px 10px;font-size:10px;min-height:36px}
+ #app .cards{gap:9px}
+ #app .card{padding:13px;border-radius:13px}
+ #app .panel{padding:15px;border-radius:13px}
+ #app .stat-value{font-size:20px;margin:11px 0 4px}
+ #app .stat-sub{font-size:9px}
+ #app .section-row{margin-top:22px}
+ #app .mobile-nav{padding-top:9px}
+}
+@media(prefers-color-scheme:dark){
+ body{background:#101713}
+ #app{background:#111a15;color:#e7eee9}
+ #app .sidebar{background:#151f19;border-right-color:#2b3930}
+ #app .nav button{color:#aab8af}
+ #app .nav button.active{background:#213b2c;color:#b9e0c7;box-shadow:inset 3px 0 #65a981}
+ #app .nav button:hover{background:#1c3024;color:#d7e9dc}
+ #app .side-note{background:#1d3326;border-color:#2a4634;color:#c0d8c7}
+ #app .page-head h1,#app .section-row h2,#app .panel h3,#app .tx-name{color:#e1ebe4}
+ #app .page-head .muted,#app .eyebrow{color:#9aaa9f}
+ #app .card,#app .panel{background:#19251e;border-color:#2b3a30;box-shadow:none}
+ #app .stat-value{color:#e5eee7}
+ #app .stat-icon{background:#233b2b;color:#a9d5b8}
+ #app .stat-sub,#app .stat-top{color:#a1b0a6}
+ #app .btn.secondary{background:#233b2b;color:#c4e1cd}
+ #app .btn.ghost{background:#1b2921;border-color:#35463a;color:#d0ddd4}
+ #app .tx-table td{border-top-color:#2a382f}
+ #app .tx-table tbody tr:hover{background:#1e2c23}
+ #app .field input,#app .field select{background:#142019;border-color:#35463a;color:#e6eee8}
+ #app .day{background:#19251e;border-color:#2b3a30}
+ #app .day:hover{background:#21372a}
+ #app .day.selected{background:#244331;color:#d5ebdc;border-color:#5e9c73}
+ #app .mobile-nav{background:rgba(23,34,27,.94);border-top-color:#2b3930}
+}
+@media(prefers-reduced-motion:reduce){#app *,#app *:before,#app *:after{transition:none!important;scroll-behavior:auto!important}}
+
 </style></head>
 <body><div class="app" id="app">
 <header class="topbar"><div class="brand"><div class="logo">↗</div><span>mi<span style="font-weight:400;opacity:.8">finanzas</span></span></div><div class="top-right"><span style="font-size:11px;opacity:.8" id="todayLabel"></span><input class="month-control" type="month" id="monthPicker" aria-label="Seleccionar mes"></div></header>
