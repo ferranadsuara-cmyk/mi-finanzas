@@ -42,3 +42,15 @@ test('prepara evidencia de lectura con fecha, dominio y errores',()=>{
  const out=web.researchEvidence([{title:'Informe',canonicalUrl:'https://fuente.es/informe',publishedAt:'2026-11-01',description:'Resumen',headings:['Datos'],text:'Contenido útil'},{url:'https://fallo.org',readError:'Bloqueado'}]);
  assert.match(out,/fuente.es/);assert.match(out,/2026-11-01/);assert.match(out,/Contenido útil/);assert.match(out,/Bloqueado/);
 });
+
+test('crea referencias de fuentes sin duplicados y descarta URLs inseguras',()=>{
+ const list=web.sourceList([{title:'Resultado A',url:'https://fuente.es/a'},{title:'Inseguro',url:'javascript:alert(1)'}],[{title:'Página A',canonicalUrl:'https://fuente.es/a',text:'texto'},{title:'Página B',url:'https://otra.org/b',text:'texto'}]);
+ assert.match(list,/Página A/);assert.match(list,/Página B/);assert.doesNotMatch(list,/javascript:/);
+ assert.equal((list.match(/https:\/\//g)||[]).length,2);
+});
+test('informa cobertura real de fuentes leídas',()=>{
+ const a=web.sourceAssessment([{url:'https://a.es'}],[{url:'https://a.es',text:'dato'},{url:'https://b.es',text:'otro'},{url:'https://c.es',readError:'bloqueado'}]);
+ assert.equal(a.pagesRead,2);assert.equal(a.pagesFailed,1);assert.equal(a.independentDomains,2);assert.equal(a.hasMultipleReadableSources,true);
+ const b=web.sourceAssessment([], [{url:'https://a.es',text:'solo'}]);
+ assert.equal(b.hasMultipleReadableSources,false);
+});
