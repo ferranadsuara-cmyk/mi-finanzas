@@ -17,5 +17,5 @@ test('detecta búsquedas web y comparación de precios',()=>{
 });
 test('formatea resultados como evidencia con URL',()=>{
  const out=web.evidence({results:[{title:'Tienda',url:'https://shop.example',snippet:'Oferta 49 €'}]});
- assert.match(out,/Tienda/);assert.match(out,/https:\/\/shop\.example/);assert.match(out,/49/);
+ assert.match(out,/Tienda/);assert.match(out,/https:\/\/shop\.example/);assert.match(out,/49/);\n const local=web.evidence({results:[{store:'MediaMarkt',title:'Producto',url:'https://mediamarkt.es/item',price:89.9,priceSource:'search-snippet',queryType:'MediaMarkt · sucursales en Valencia'}]});\n assert.match(local,/no confirma sucursal concreta/);assert.match(local,/pendiente de verificar/);
 });
