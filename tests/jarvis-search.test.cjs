@@ -22,7 +22,7 @@ test('identifica tienda por retailer y conserva el precio como fragmento no conf
  const row=parseResults(html,6,'PcComponentes · sucursales en Valencia')[0];
  assert.equal(row.store,'PcComponentes');assert.equal(row.price,79.99);assert.equal(row.priceSource,'search-snippet');assert.match(row.queryType,/Valencia/);
 });
-test('limpia entidades y valida límites de búsqueda',()=>{
+test('general web search labels each source by its real domain',()=>{\n const html='<div class="result"><a class="result__a" href="https://example.org/page">Research result</a><a class="result__snippet">Useful information</a></div>';\n const row=parseResults(html,8,'general')[0];\n assert.equal(row.store,'example.org');\n assert.equal(row.queryType,'general');\n});\ntest('limpia entidades y valida límites de búsqueda',()=>{
  assert.equal(cleanText('Precio &amp; envío <b>gratis</b>'),'Precio & envío gratis');
  assert.equal(allowedQuery('auriculares bluetooth'),true);
  assert.equal(allowedQuery('ab'),false);
