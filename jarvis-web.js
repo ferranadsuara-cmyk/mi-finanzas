@@ -1,30 +1,35 @@
 (function(){
-  'use strict';
-  function detect(question){
-    const original=String(question||'').trim();
-    const q=original.toLocaleLowerCase('es-ES').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    const trigger=/\b(busca|buscar|encuentra|investiga|en internet|por internet|en la web|en tiendas|donde comprar|donde puedo comprar|compar(a|ar) precios|compara tiendas|ofertas|precio actual|precios actuales|cuanto cuesta|cuanto valen)\b/.test(q);
-    if(!trigger)return null;
-    let query=original
-      .replace(/^[¿¡\s]+|[?!\s]+$/g,'')
-      .replace(/^(?:jarvis[, ]*)?(?:busca(?:me)?|buscar|encuentra(?:me)?|investiga(?:me)?|compara(?:me)?(?: los)? precios de|compara precios de|dime donde comprar|donde puedo comprar|donde comprar|cuanto cuesta|cuanto valen)\s*/i,'')
-      .replace(/\b(?:en internet|por internet|en la web|en tiendas online|en tiendas)\b/ig,'')
-      .trim();
-    if(!query)query=original;
-    const shopping=/\b(precio|precios|comprar|tienda|tiendas|oferta|ofertas|barato|barata|baratos|baratas|coste|cuesta|valen)\b/i.test(original);
-    return {query:query.slice(0,180),shopping};
-  }
-  async function search(query){
-    const url='/api/jarvis-search?q='+encodeURIComponent(query);
-    const response=await fetch(url,{method:'GET',headers:{Accept:'application/json'},credentials:'same-origin'});
-    let payload={};
-    try{payload=await response.json()}catch(_){}
-    if(!response.ok)throw new Error(payload.error||'No se ha podido completar la búsqueda web.');
-    if(!Array.isArray(payload.results))throw new Error('La respuesta del buscador no tiene un formato válido.');
-    return payload;
-  }
-  function evidence(payload){
-    return (payload.results||[]).map((r,i)=>(i+1)+'. '+r.title+'\nURL: '+r.url+'\nResumen: '+(r.snippet||'Sin descripción disponible')).join('\n\n');
-  }
-  window.JarvisWeb={detect,search,evidence};
+ 'use strict';
+ const LOCATION_KEY='jarvis_shopping_location_v1';
+ function norm(v){return String(v||'').toLocaleLowerCase('es-ES').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'')}
+ function detect(question){
+  const original=String(question||'').trim(),q=norm(original);
+  const trigger=/\\b(busca|buscar|encuentra|investiga|en internet|por internet|en la web|en tiendas|donde comprar|donde puedo comprar|compara precios|compara tiendas|ofertas|precio actual|precios actuales|cuanto cuesta|cuanto valen|quiero comprar|me quiero comprar|estoy buscando)\\b/.test(q);
+  if(!trigger)return null;
+  let query=original.replace(/^[¿¡\\s]+|[?!\\s]+$/g,'').replace(/^(?:jarvis[, ]*)?(?:busca(?:me)?|buscar|encuentra(?:me)?|investiga(?:me)?|compara(?:me)?(?: los)? precios de|compara precios de|dime donde comprar|donde puedo comprar|donde comprar|cuanto cuesta|cuanto valen|quiero comprar(?:me)?|me quiero comprar|estoy buscando)\\s*/i,'').replace(/\\b(?:en internet|por internet|en la web|en tiendas online|en tiendas)\\b/ig,'').trim();
+  if(!query)query=original;
+  const shopping=/\\b(precio|precios|comprar|comprarme|tienda|tiendas|oferta|ofertas|barato|barata|baratos|baratas|coste|cuesta|valen|auriculares|movil|portatil|televisor|zapatillas|nevera|lavadora|consola)\\b/i.test(original);
+  return {query:query.slice(0,180),shopping};
+ }
+ function getLocation(){try{return localStorage.getItem(LOCATION_KEY)||''}catch(_){return ''}}
+ function setLocation(value){const v=String(value||'').trim().slice(0,80);try{if(v)localStorage.setItem(LOCATION_KEY,v);else localStorage.removeItem(LOCATION_KEY)}catch(_){}return v}
+ function locationCommand(question){
+  const q=String(question||'').trim();
+  const m=q.match(/^(?:mi (?:codigo postal|código postal|localidad|ciudad|zona) es|busca sucursales cerca de)\\s+(.+)$/i);
+  if(m){setLocation(m[1]);return 'He guardado tu zona de búsqueda: '+m[1]+'. La usaré para buscar tiendas físicas y sucursales cuando los resultados permitan identificar precios locales. Puedes cambiarla diciendo «mi código postal es …».'}
+  if(/^(?:qué zona tienes guardada|que zona tienes guardada|mi zona de busqueda|mi zona de búsqueda)$/i.test(q))return getLocation()?'Tu zona de búsqueda guardada es: '+getLocation()+'.':'Todavía no has indicado una zona. Dime «mi código postal es …» para buscar sucursales cercanas.';
+  return null;
+ }
+ async function search(query,options){
+  const opts=options||{},params=new URLSearchParams({q:query});
+  if(opts.shopping)params.set('shopping','1');
+  const location=opts.location||getLocation();if(location)params.set('location',location);
+  const response=await fetch('/api/jarvis-search?'+params.toString(),{method:'GET',headers:{Accept:'application/json'},credentials:'same-origin'});
+  let payload={};try{payload=await response.json()}catch(_){}
+  if(!response.ok)throw new Error(payload.error||'No se ha podido completar la búsqueda web.');
+  if(!Array.isArray(payload.results))throw new Error('La respuesta del buscador no tiene un formato válido.');
+  return payload;
+ }
+ function evidence(payload){return (payload.results||[]).map((r,i)=>(i+1)+'. Tienda: '+(r.store||'no identificada')+'\\n'+r.title+'\\nURL: '+r.url+'\\nPrecio detectado automáticamente: '+(r.price===null?'no detectado':r.price+' €')+'\\nResumen: '+(r.snippet||'Sin descripción disponible')).join('\\n\\n')}
+ window.JarvisWeb={detect,search,evidence,getLocation,setLocation,locationCommand};
 })();
