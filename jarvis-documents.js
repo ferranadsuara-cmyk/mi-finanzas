@@ -20,5 +20,37 @@ async function getFile(projectId,id){const row=await transaction('readonly',stor
 async function openFile(projectId,id){const row=await getFile(projectId,id);if(!row)return {ok:false,error:'No encuentro ese archivo.'};const url=URL.createObjectURL(row.blob);return {ok:true,url,name:row.name,type:row.type}}
 async function getContext(projectId,query,maxChars){const rows=await transaction('readonly',store=>store.index('projectId').getAll(String(projectId)));const docs=(rows||[]).filter(x=>x.text&&x.text.length).map(x=>({doc:x,score:rankText(x.name+' '+x.text,query)})).sort((a,b)=>b.score-a.score||String(b.doc.createdAt).localeCompare(String(a.doc.createdAt)));const limit=Math.max(500,Math.min(14000,Number(maxChars)||8000));let out='';for(const item of docs){const d=item.doc;let text=d.text;if(query&&item.score>0){const terms=tokenize(query),low=text.toLowerCase();let pos=-1;for(const term of terms){pos=low.indexOf(term);if(pos>=0)break}if(pos>300)text='…'+text.slice(pos-300);text=text.slice(0,Math.min(4500,limit-out.length))}else text=text.slice(0,Math.min(1500,limit-out.length));const block='\\n[Documento: '+d.name+']\\n'+text+'\\n';if(out.length+block.length>limit)break;out+=block}return out.trim()}
 async function getBlobUrl(projectId,id){const r=await openFile(projectId,id);return r.ok?r.url:null}
-window.JarvisDocuments={validateFileInfo,extractPlainText,rankText,list,addFile,remove,getFile,openFile,getContext,getBlobUrl,limits:{maxFileBytes:MAX_FILE,maxFilesPerProject:MAX_FILES,maxExtractedChars:MAX_TEXT}};
+async function exportData(){
+ const rows=await transaction('readonly',store=>store.getAll());
+ const total=(rows||[]).reduce((n,row)=>n+(Number(row.size)||0),0);
+ if(total>40*1024*1024)throw new Error('Los documentos ocupan más de 40 MB. Exporta o elimina algunos archivos y vuelve a intentarlo.');
+ const documents=[];
+ for(const row of rows||[]){
+  if(!(row.blob instanceof Blob))continue;
+  const bytes=new Uint8Array(await row.blob.arrayBuffer());
+  let binary='';
+  for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,Math.min(i+0x8000,bytes.length)));
+  const {blob,...meta}=row;
+  documents.push({...meta,blobBase64:btoa(binary)});
+ }
+ return {version:1,totalBytes:total,documents};
+}
+async function importData(payload){
+ if(!payload||payload.version!==1||!Array.isArray(payload.documents))throw new Error('La biblioteca de documentos de la copia no tiene un formato válido.');
+ if(payload.documents.length>900)throw new Error('La copia contiene demasiados documentos.');
+ let total=0;
+ const records=payload.documents.map(item=>{
+  if(!item||typeof item.projectId!=='string'||typeof item.name!=='string'||typeof item.blobBase64!=='string')throw new Error('Hay un documento dañado en la copia.');
+  const size=Number(item.size)||0;total+=size;
+  if(size<0||size>MAX_FILE||total>40*1024*1024)throw new Error('La biblioteca supera el límite de restauración de 40 MB o contiene un archivo demasiado grande.');
+  const binary=atob(item.blobBase64),bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+  if(bytes.byteLength!==size)throw new Error('El tamaño de un documento no coincide con la copia.');
+  const {blobBase64,...meta}=item;
+  return {...meta,blob:new Blob([bytes],{type:String(item.type||'application/octet-stream')})};
+ });
+ await transaction('readwrite',store=>{store.clear();records.forEach(record=>store.put(record))});
+ return {count:records.length,totalBytes:total};
+}
+window.JarvisDocuments={validateFileInfo,extractPlainText,rankText,list,addFile,remove,getFile,openFile,getContext,getBlobUrl,exportData,importData,limits:{maxFileBytes:MAX_FILE,maxFilesPerProject:MAX_FILES,maxExtractedChars:MAX_TEXT}};
 })();
