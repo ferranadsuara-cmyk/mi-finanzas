@@ -45,7 +45,7 @@
  }
  function researchEvidence(pages){
   return (pages||[]).map((p,i)=>[
-   'FUENTE '+(i+1)+': '+(p.title||'Título no disponible),
+   'FUENTE '+(i+1)+': '+(p.title||'Título no disponible'),
    'URL: '+(p.canonicalUrl||p.url||'no disponible),
    'Dominio: '+(()=>{try{return new URL(p.canonicalUrl||p.url).hostname}catch(_){return 'no identificado'}})(),
    'Fecha de publicación: '+(p.publishedAt||'no indicada'),
