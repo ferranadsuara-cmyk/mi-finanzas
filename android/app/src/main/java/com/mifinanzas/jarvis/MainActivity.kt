@@ -4,6 +4,13 @@ import android.app.Activity
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
+import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.net.Uri
+import android.content.Intent
 import android.widget.*
 import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Contents
@@ -16,6 +23,8 @@ import kotlinx.coroutines.flow.collect
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
+import org.json.JSONArray
+import org.json.JSONObject
 
 class MainActivity : Activity() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -29,6 +38,11 @@ class MainActivity : Activity() {
     private lateinit var downloadButton: Button
     private lateinit var loadButton: Button
     private lateinit var sendButton: Button
+    private lateinit var openFinanceButton: Button
+    private lateinit var webView: WebView
+    private lateinit var rootLayout: LinearLayout
+    private var fileChooserCallback: android.webkit.ValueCallback<Array<Uri>>? = null
+    private val fileChooserRequest = 4107
     private var engine: Engine? = null
     private var conversation: Conversation? = null
     private var busy = false
@@ -42,7 +56,7 @@ class MainActivity : Activity() {
     }
 
     private fun buildUi() {
-        val root = LinearLayout(this).apply {
+        rootLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(24, 28, 24, 20)
             setBackgroundColor(0xFFF4F7F4.toInt())
@@ -71,6 +85,11 @@ class MainActivity : Activity() {
             text = "Cargar modelo"
             setOnClickListener { loadModel() }
         }
+        openFinanceButton = Button(this).apply {
+            text = "Abrir Mi Finanzas con J.A.R.V.I.S."
+            isEnabled = false
+            setOnClickListener { openFinance() }
+        }
         transcript = TextView(this).apply {
             text = "Esta app de prueba ejecuta Gemma directamente en el teléfono.\n"
             textSize = 15f
@@ -78,6 +97,34 @@ class MainActivity : Activity() {
             setPadding(12, 12, 12, 12)
         }
         val scroll = ScrollView(this).apply { addView(transcript) }
+        webView = WebView(this).apply {
+            visibility = View.GONE
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            settings.databaseEnabled = true
+            settings.allowFileAccess = false
+            addJavascriptInterface(NativeJarvisBridge(), "AndroidJarvis")
+            webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                    val host = request.url.host ?: return true
+                    if (host == "mi-finanzas-tbu1-personal-dcec.vercel.app") return false
+                    return true
+                }
+            }
+            webChromeClient = object : WebChromeClient() {
+                override fun onShowFileChooser(view: WebView, callback: android.webkit.ValueCallback<Array<Uri>>, params: FileChooserParams): Boolean {
+                    fileChooserCallback?.onReceiveValue(null)
+                    fileChooserCallback = callback
+                    return try {
+                        startActivityForResult(params.createIntent(), fileChooserRequest)
+                        true
+                    } catch (e: Exception) {
+                        fileChooserCallback = null
+                        false
+                    }
+                }
+            }
+        }
         prompt = EditText(this).apply {
             hint = "Escribe una pregunta…"
             minLines = 2
@@ -88,15 +135,17 @@ class MainActivity : Activity() {
             isEnabled = false
             setOnClickListener { sendPrompt() }
         }
-        root.addView(title)
-        root.addView(status)
-        root.addView(progress)
-        root.addView(downloadButton)
-        root.addView(loadButton)
-        root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
-        root.addView(prompt)
-        root.addView(sendButton)
-        setContentView(root)
+        rootLayout.addView(title)
+        rootLayout.addView(status)
+        rootLayout.addView(progress)
+        rootLayout.addView(downloadButton)
+        rootLayout.addView(loadButton)
+        rootLayout.addView(openFinanceButton)
+        rootLayout.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        rootLayout.addView(webView, LinearLayout.LayoutParams(-1, 0, 1f))
+        rootLayout.addView(prompt)
+        rootLayout.addView(sendButton)
+        setContentView(rootLayout)
     }
 
     private fun refreshModelState() {
@@ -216,6 +265,7 @@ class MainActivity : Activity() {
                 }
                 status.text = "Gemma 4 E2B-it preparado en este dispositivo."
                 sendButton.isEnabled = true
+                openFinanceButton.isEnabled = true
                 transcript.append("\nSistema: modelo listo. Escribe una pregunta.\n")
             } catch (e: Exception) {
                 status.text = "No se pudo iniciar Gemma: " + (e.message ?: "error desconocido")
@@ -223,6 +273,99 @@ class MainActivity : Activity() {
             } finally {
                 busy = false
             }
+        }
+    }
+
+
+    private fun openFinance() {
+        if (conversation == null) {
+            status.text = "Carga Gemma antes de abrir Mi Finanzas."
+            return
+        }
+        titleBarMode(true)
+        webView.visibility = View.VISIBLE
+        webView.loadUrl("https://mi-finanzas-tbu1-personal-dcec.vercel.app")
+    }
+
+    private fun titleBarMode(finance: Boolean) {
+        status.visibility = if (finance) View.GONE else View.VISIBLE
+        progress.visibility = View.GONE
+        downloadButton.visibility = if (finance) View.GONE else View.VISIBLE
+        loadButton.visibility = if (finance) View.GONE else View.VISIBLE
+        openFinanceButton.visibility = if (finance) View.GONE else View.VISIBLE
+        val scroll = rootLayout.getChildAt(6)
+        scroll.visibility = if (finance) View.GONE else View.VISIBLE
+        prompt.visibility = if (finance) View.GONE else View.VISIBLE
+        sendButton.visibility = if (finance) View.GONE else View.VISIBLE
+    }
+
+    inner class NativeJarvisBridge {
+        @JavascriptInterface
+        fun isReady(): Boolean = conversation != null && !busy
+
+        @JavascriptInterface
+        fun generate(messagesJson: String, requestId: Int) {
+            if (busy) {
+                deliverNativeResult(requestId, null, "J.A.R.V.I.S. está ocupado. Espera un momento.")
+                return
+            }
+            val promptText = try {
+                val messages = JSONArray(messagesJson)
+                var system = ""
+                var user = ""
+                for (i in 0 until messages.length()) {
+                    val item = messages.optJSONObject(i) ?: continue
+                    when (item.optString("role")) {
+                        "system" -> system = item.optString("content")
+                        "user" -> user = item.optString("content")
+                    }
+                }
+                if (user.isBlank()) throw IllegalArgumentException("No se ha recibido la pregunta.")
+                (if (system.isNotBlank()) system + "\\n\\n" else "") + "Pregunta actual del usuario: " + user
+            } catch (e: Exception) {
+                deliverNativeResult(requestId, null, "No se pudo leer la pregunta: " + (e.message ?: "formato no válido"))
+                return
+            }
+            busy = true
+            scope.launch {
+                try {
+                    val conv = conversation ?: throw IllegalStateException("Gemma no está cargado.")
+                    val answer = withContext(Dispatchers.IO) {
+                        val output = StringBuilder()
+                        conv.sendMessageAsync(Contents.of(promptText)).collect { message ->
+                            output.append(message.toString())
+                        }
+                        output.toString()
+                    }
+                    deliverNativeResult(requestId, answer, null)
+                } catch (e: Exception) {
+                    deliverNativeResult(requestId, null, e.message ?: "Error al generar la respuesta.")
+                } finally {
+                    busy = false
+                }
+            }
+        }
+    }
+
+    private fun deliverNativeResult(id: Int, answer: String?, error: String?) {
+        runOnUiThread {
+            if (!::webView.isInitialized) return@runOnUiThread
+            val answerJson = if (answer == null) "null" else JSONObject.quote(answer)
+            val errorJson = if (error == null) "null" else JSONObject.quote(error)
+            webView.evaluateJavascript(
+                "window.onNativeJarvisResult && window.onNativeJarvisResult($id, $answerJson, $errorJson);",
+                null
+            )
+        }
+    }
+
+    @Deprecated("Deprecated in Android")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == fileChooserRequest) {
+            val result = WebChromeClient.FileChooserParams.parseResult(resultCode, data)
+            fileChooserCallback?.onReceiveValue(result)
+            fileChooserCallback = null
         }
     }
 
@@ -257,6 +400,7 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
+        fileChooserCallback?.onReceiveValue(null)
         scope.cancel()
         conversation?.close()
         engine?.close()
