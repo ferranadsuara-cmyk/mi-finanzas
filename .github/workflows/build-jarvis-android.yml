@@ -5,6 +5,14 @@ on:
     paths:
       - "android/**"
       - "index.html"
+      - "nueva-web/**"
+      - "jarvis-memory.js"
+      - "jarvis-tools.js"
+      - "jarvis-web.js"
+      - "jarvis-products.js"
+      - "api/**"
+      - "sw.js"
+      - "tests/**"
       - ".github/workflows/build-jarvis-android.yml"
 jobs:
   build:
@@ -18,6 +26,32 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.13"
+      - name: Check JARVIS JavaScript syntax
+        run: node --check jarvis-memory.js
+      - name: Test JARVIS memory module
+        run: node --test tests/jarvis-memory.test.cjs
+      - name: Check JARVIS tools syntax
+        run: node --check jarvis-tools.js
+      - name: Test JARVIS tools
+        run: node --test tests/jarvis-tools.test.cjs
+      - name: Check web search API syntax
+        run: node --check api/jarvis-search.js
+      - name: Test web search API
+        run: node --test tests/jarvis-search.test.cjs
+      - name: Check product page API syntax
+        run: node --check api/jarvis-product.js
+      - name: Test product page extraction
+        run: node --test tests/jarvis-product.test.cjs
+      - name: Check JARVIS web module syntax
+        run: node --check jarvis-web.js
+      - name: Test JARVIS web module
+        run: node --test tests/jarvis-web.test.cjs
+      - name: Check JARVIS products syntax
+        run: node --check jarvis-products.js
+      - name: Test JARVIS products module
+        run: node --test tests/jarvis-products.test.cjs
+      - name: Check inline application scripts (Mi Finanzas y nueva web)
+        run: node tests/check-inline-scripts.cjs
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
         working-directory: android
