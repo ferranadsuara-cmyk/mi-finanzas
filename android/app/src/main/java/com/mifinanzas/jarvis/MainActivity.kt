@@ -7,6 +7,7 @@ import android.speech.RecognizerIntent
 import android.speech.RecognitionListener
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import java.util.Locale
 import android.os.Bundle
 import android.view.Gravity
@@ -450,7 +451,18 @@ class MainActivity : Activity() {
         }
         textToSpeech = TextToSpeech(this) { result ->
             speechReady = result == TextToSpeech.SUCCESS
-            if (speechReady) textToSpeech?.language = Locale("es", "ES")
+            if (speechReady) {
+                textToSpeech?.language = Locale("es", "ES")
+                textToSpeech?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                    override fun onStart(utteranceId: String?) { deliverSpeechState("speaking", "JARVIS está hablando…") }
+                    override fun onDone(utteranceId: String?) {
+                        runOnUiThread { if (::webView.isInitialized) webView.evaluateJavascript("window.onJarvisSpeechFinished && window.onJarvisSpeechFinished();", null) }
+                        deliverSpeechState("idle", "Respuesta terminada.")
+                    }
+                    @Deprecated("Deprecated in Java")
+                    override fun onError(utteranceId: String?) { deliverSpeechState("error", "No se pudo reproducir la respuesta.") }
+                })
+            }
         }
     }
 
