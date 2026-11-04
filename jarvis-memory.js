@@ -93,7 +93,7 @@
       {key:'brevity',match:/\b(mas breve|mas corto|mas conciso|ve al grano|no te enrolles|responde breve)\b/,value:'Prefiero respuestas breves y directas.'},
       {key:'steps',match:/\b(paso a paso|por pasos|uno por uno|desglosa los pasos)\b/,value:'Prefiero explicaciones paso a paso.'},
       {key:'simple',match:/\b(mas sencillo|mas simple|lenguaje sencillo|explicalo facil|facil de entender)\b/,value:'Prefiero explicaciones sencillas y fáciles de entender.'},
-      {key:'detail',match:/\b(mas detalle|mas completo|con mas profundidad|no omitas detalles)\b/,value:'Prefiero explicaciones completas y detalladas.'},
+      {key:'detail',match:/\b(mas detalle|mas detallad\w*|mas completo|con mas profundidad|no omitas detalles)\b/,value:'Prefiero explicaciones completas y detalladas.'},
       {key:'exam',match:/\b(como en un examen|para examen|respuesta de examen|formato examen)\b/,value:'Cuando estudio, prefiero respuestas redactadas como en un examen.'},
       {key:'no-tables',match:/\b(sin tablas|no uses tablas|no me pongas tablas)\b/,value:'Prefiero que no uses tablas.'},
       {key:'tables',match:/\b(con tablas|usa tablas|ponlo en una tabla)\b/,value:'Prefiero que uses tablas cuando ayuden a organizar la información.'},
