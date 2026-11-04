@@ -189,3 +189,12 @@ test('exporta e importa proyectos y bloquea credenciales sensibles', () => {
   assert.equal(restored.activeProject().name, 'Aplicación personal');
   assert.match(restored.projectContext('interfaz'), /interfaz inicial/);
 });
+
+
+test('no mezcla notas si se indica un proyecto inexistente', () => {
+  const memory = createMemory();
+  const project = memory.createProject('Proyecto principal');
+  const result = memory.addProjectNote('Proyecto que no existe', 'decision', 'Esta nota no debe guardarse.');
+  assert.equal(result.ok, false);
+  assert.equal(project.project.notes.length, 0);
+});
