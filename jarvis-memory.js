@@ -88,7 +88,7 @@
     const text=String(message||'').replace(/\s+/g,' ').trim();
     if(!text||text.length<8||text.length>2000||/[¿?]/.test(text))return {saved:false};
     const patterns=[
-      /\b(prefiero|me gusta|me gustan|me encanta|me encantan|no me gusta|no me gustan|me interesa|me interesan)\s+([^.!?\n]{3,120})/i,
+      /\b(prefiero|no me gustan|no me gusta|me gustan|me gusta|me encantan|me encanta|me interesan|me interesa)\s+([^.!?\n]{3,120})/i,
       /\b(mi objetivo es|mi meta es|estoy ahorrando para|quiero ahorrar para|estudio|trabajo en|me dedico a)\s+([^.!?\n]{3,140})/i,
       /\bquiero que me (respondas|expliques|hables)\s+([^.!?\n]{3,120})/i
     ];
