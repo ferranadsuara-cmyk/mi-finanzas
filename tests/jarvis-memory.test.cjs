@@ -150,3 +150,42 @@ test('no convierte correcciones puntuales en preferencias permanentes', () => {
   assert.equal(memory.learnFromCorrection('Dame un ejemplo diferente.').recognized, false);
   assert.equal(memory.list().length, 0);
 });
+
+
+test('crea proyectos, guarda decisiones y recupera su contexto', () => {
+  const memory = createMemory();
+  const created = memory.createProject('Mi Finanzas', 'Desarrollo del asistente personal JARVIS.');
+  assert.equal(created.ok, true);
+  assert.equal(memory.activeProject().name, 'Mi Finanzas');
+  assert.equal(memory.addProjectNote(created.project.id, 'decision', 'Usaremos Gemma 4 E2B-it como modelo local.').ok, true);
+  assert.equal(memory.addProjectNote(created.project.id, 'next', 'Implementar memoria contextual por proyectos.').ok, true);
+  const context = memory.projectContext('¿Qué hemos decidido para JARVIS?', 1000);
+  assert.match(context, /Mi Finanzas/);
+  assert.match(context, /Gemma 4 E2B-it/);
+  assert.match(context, /memoria contextual/);
+});
+
+test('permite varios proyectos y activa uno sin mezclar sus decisiones', () => {
+  const memory = createMemory();
+  const finance = memory.createProject('Mi Finanzas');
+  const studies = memory.createProject('Estudios');
+  memory.addProjectNote(finance.project.id, 'decision', 'La información financiera se queda en local.');
+  memory.addProjectNote(studies.project.id, 'decision', 'Preparar el examen de cálculo.');
+  assert.equal(memory.setActiveProject(finance.project.id).project.name, 'Mi Finanzas');
+  const context = memory.projectContext('¿Qué hemos decidido?', 1000);
+  assert.match(context, /información financiera/);
+  assert.doesNotMatch(context, /examen de cálculo/);
+  assert.equal(memory.listProjects().length, 2);
+});
+
+test('exporta e importa proyectos y bloquea credenciales sensibles', () => {
+  const memory = createMemory();
+  const project = memory.createProject('Aplicación personal');
+  assert.equal(memory.addProjectNote(project.project.id, 'note', 'Mi contraseña es secreto123').ok, false);
+  memory.addProjectNote(project.project.id, 'progress', 'La interfaz inicial está preparada.');
+  const restored = createMemory();
+  assert.equal(restored.importData(memory.exportData()), true);
+  assert.equal(restored.listProjects().length, 1);
+  assert.equal(restored.activeProject().name, 'Aplicación personal');
+  assert.match(restored.projectContext('interfaz'), /interfaz inicial/);
+});
