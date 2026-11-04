@@ -46,6 +46,10 @@ jobs:
         run: node --check api/jarvis-product.js
       - name: Test product page extraction
         run: node --test tests/jarvis-product.test.cjs
+      - name: Check JARVIS research module syntax
+        run: node --check jarvis-research.js
+      - name: Test JARVIS deep research planner
+        run: node --test tests/jarvis-research.test.cjs
       - name: Check JARVIS web module syntax
         run: node --check jarvis-web.js
       - name: Test JARVIS web module
