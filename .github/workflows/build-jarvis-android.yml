@@ -8,6 +8,7 @@ on:
       - "jarvis-memory.js"
       - "jarvis-tools.js"
       - "jarvis-web.js"
+      - "jarvis-products.js"
       - "api/**"
       - "sw.js"
       - "tests/**"
@@ -40,6 +41,10 @@ jobs:
         run: node --check jarvis-web.js
       - name: Test JARVIS web module
         run: node --test tests/jarvis-web.test.cjs
+      - name: Check JARVIS products syntax
+        run: node --check jarvis-products.js
+      - name: Test JARVIS products module
+        run: node --test tests/jarvis-products.test.cjs
       - name: Check inline application scripts
         run: node tests/check-inline-scripts.cjs
       - name: Build debug APK
