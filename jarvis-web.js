@@ -57,7 +57,7 @@
    let domain='no identificado';
    try{domain=new URL(p.canonicalUrl||p.url).hostname}catch(_){}
    return [
-    'FUENTE '+(i+1)+': '+(p.title||'Título no disponible'),
+    '[F'+(i+1)+'] '+(p.title||'Título no disponible'),
     'URL: '+(p.canonicalUrl||p.url||'no disponible'),
     'Dominio: '+domain,
     'Fecha de publicación: '+(p.publishedAt||'no indicada'),
@@ -68,6 +68,18 @@
    ].join('\n');
   }).join('\n\n');
  }
+
+ function sourceList(results,pages){
+  const items=[],seen=new Set();
+  (pages||[]).forEach((p)=>{const url=p.canonicalUrl||p.url;if(!url)return;try{const u=new URL(url);if(!/^https?:$/.test(u.protocol)||seen.has(u.href))return;seen.add(u.href);items.push({title:p.title||u.hostname,url:u.href,kind:p.readError?'resultado no leído':'página leída'});}catch(_){}});
+  (results||[]).forEach((r)=>{if(!r.url)return;try{const u=new URL(r.url);if(!/^https?:$/.test(u.protocol)||seen.has(u.href))return;seen.add(u.href);items.push({title:r.title||u.hostname,url:u.href,kind:'resultado de búsqueda'});}catch(_){}});
+  return items.map((x,i)=>'['+(i+1)+'] '+x.title+' ('+x.kind+')\\n'+x.url).join('\\n');
+ }
+ function sourceAssessment(results,pages){
+  const read=(pages||[]).filter(p=>p.text&&!p.readError),failed=(pages||[]).filter(p=>p.readError),domains=new Set();
+  read.forEach(p=>{try{domains.add(new URL(p.canonicalUrl||p.url).hostname.replace(/^www\\./,''))}catch(_){}});
+  return {searchResults:(results||[]).length,pagesAttempted:(pages||[]).length,pagesRead:read.length,pagesFailed:failed.length,independentDomains:domains.size,hasMultipleReadableSources:domains.size>=2};
+ }
  function evidence(payload){return (payload.results||[]).map((r,i)=>{const local=String(r.queryType||'').includes('sucursales en ');return (i+1)+'. Tienda/retailer: '+(r.store||'no identificada')+'\nÁmbito: '+(local?'búsqueda local (no confirma sucursal concreta)':'resultado web/online (no confirma stock)')+'\n'+r.title+'\nURL: '+r.url+'\nPrecio detectado en fragmento: '+(r.price===null?'no detectado':r.price+' €')+'\nOrigen del precio: '+(r.priceSource==='search-snippet'?'fragmento del buscador, pendiente de verificar en la tienda':'no detectado')+'\nResumen: '+(r.snippet||'Sin descripción disponible')}).join('\n\n')}
- window.JarvisWeb={detect,search,inspect,readPage,evidence,selectResearchPages,researchEvidence,getLocation,setLocation,locationCommand};
+ window.JarvisWeb={detect,search,inspect,readPage,evidence,selectResearchPages,researchEvidence,sourceList,sourceAssessment,getLocation,setLocation,locationCommand};
 })();
