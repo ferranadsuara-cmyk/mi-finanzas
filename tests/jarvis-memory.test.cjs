@@ -235,3 +235,19 @@ test('guarda la descripción y conserva tareas al exportar e importar proyectos'
   assert.equal(restored.getProject(project.project.id).description, 'Asistente local con memoria por proyectos.');
   assert.equal(restored.getProject(project.project.id).tasks[0].title, 'Probar el espacio de trabajo');
 });
+
+
+test('mantiene conversaciones independientes por proyecto y las restaura', () => {
+  const memory = createMemory();
+  const a = memory.createProject('Alpha');
+  const b = memory.createProject('Beta');
+  assert.equal(memory.addProjectMessage(a.project.id, 'user', 'Planificar la primera versión').ok, true);
+  assert.equal(memory.addProjectMessage(a.project.id, 'assistant', 'Empecemos por los requisitos').ok, true);
+  assert.equal(memory.addProjectMessage(b.project.id, 'user', 'Preparar el presupuesto').ok, true);
+  assert.equal(memory.getProjectConversation(a.project.id).length, 2);
+  assert.equal(memory.getProjectConversation(b.project.id).length, 1);
+  const restored = createMemory();
+  assert.equal(restored.importData(memory.exportData()), true);
+  assert.equal(restored.getProjectConversation(a.project.id).length, 2);
+  assert.equal(restored.getProjectConversation(b.project.id)[0].content, 'Preparar el presupuesto');
+});
