@@ -91,3 +91,28 @@ test('mantiene compatibilidad con el contexto reciente cuando no se proporciona 
   assert.match(memory.context(500), /Segundo recuerdo/);
   assert.match(memory.context(500), /Primer recuerdo/);
 });
+
+
+test('aprende automáticamente preferencias y objetivos expresados por el usuario', () => {
+  const memory = createMemory();
+  assert.equal(memory.learnFromMessage('Prefiero respuestas claras y paso a paso.').saved, true);
+  assert.equal(memory.learnFromMessage('Estoy ahorrando para un coche nuevo.').saved, true);
+  assert.match(memory.context(700, '¿Cómo prefiero las explicaciones?'), /respuestas claras/);
+  assert.match(memory.context(700, '¿Para qué estoy ahorrando?'), /coche nuevo/);
+  assert.equal(memory.learnFromMessage('¿Qué portátil me recomiendas?').saved, false);
+});
+
+test('guarda y recupera conversaciones favoritas y las exporta', () => {
+  const memory = createMemory();
+  const result = memory.starConversation([
+    { role: 'user', content: 'Estoy preparando un viaje a Japón.' },
+    { role: 'assistant', content: 'Podemos organizar el presupuesto.' }
+  ]);
+  assert.equal(result.ok, true);
+  assert.equal(memory.listStarredConversations().length, 1);
+  assert.match(memory.context(700, '¿Qué viaje estaba preparando?'), /viaje a Japón/);
+  const restored = createMemory();
+  assert.equal(restored.importData(memory.exportData()), true);
+  assert.equal(restored.listStarredConversations().length, 1);
+  assert.equal(restored.unstarConversation(result.conversation.id), 1);
+});
