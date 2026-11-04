@@ -58,6 +58,27 @@ body{letter-spacing:-.01em;-webkit-font-smoothing:antialiased}
 @media(max-width:950px){.layout{grid-template-columns:200px minmax(0,1fr)}.main{padding-inline:22px}}
 @media(max-width:680px){.topbar{padding:12px 15px}.main{padding:20px 14px 96px}.page-head{margin-bottom:20px}.page-head h1{font-size:27px}.cards{gap:11px}.card,.panel{padding:16px;border-radius:17px}.stat-value{font-size:23px}.grid2{gap:12px}.mobile-nav{box-shadow:0 -8px 28px #102c1b0b;border-top:1px solid light-dark(#e5ece6,#2b382f);backdrop-filter:blur(14px)}.btn{min-height:42px}.modal{border-radius:20px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
+
+/* Mi Finanzas · professional UI refinement */
+:root{--site-primary:#17634b;--site-secondary:#e7f2eb;--site-background:#f6f8f6;--site-on-secondary:#174b38}
+body{letter-spacing:-.012em;-webkit-font-smoothing:antialiased}
+.app{background:var(--site-background)}
+.topbar{background:linear-gradient(115deg,#124b39,#1d7054);box-shadow:0 5px 20px #102e1d12;padding-block:15px}
+.brand{font-size:19px;letter-spacing:-.65px}.logo{border:1px solid #ffffff25;box-shadow:inset 0 1px #ffffff16}
+.layout{max-width:1580px;grid-template-columns:236px minmax(0,1fr)}
+.sidebar{background:light-dark(#fbfcfb,#151d18);padding:27px 16px;border-right-color:light-dark(#e6ece7,#2b382f)}
+.nav{gap:5px}.nav button{border-radius:12px;transition:background .16s,color .16s,transform .16s}.nav button:hover{transform:translateX(2px)}
+.main{padding-top:32px}.page-head{margin-bottom:26px}.page-head h1{font-size:clamp(27px,3vw,35px);font-weight:800;letter-spacing:-1.35px}
+.cards{gap:15px}.card,.panel{border-radius:20px;border-color:light-dark(#e5ece6,#2b3930);box-shadow:0 7px 25px #153a2308;transition:border-color .16s,box-shadow .16s,transform .16s}.card:hover,.panel:hover{border-color:light-dark(#d4e2d7,#3a4b40);box-shadow:0 11px 30px #153a230c}
+.card{padding:20px}.stat-value{font-size:clamp(22px,2.1vw,29px);letter-spacing:-1px}.stat-icon{border-radius:11px}
+.btn{border-radius:12px;transition:transform .14s,filter .14s}.btn:hover{filter:brightness(1.04);transform:translateY(-1px)}.btn:active{transform:translateY(0)}
+.field input,.field select{border-radius:12px;transition:border-color .15s,box-shadow .15s}.field input:focus,.field select:focus{box-shadow:0 0 0 4px #4e997420}
+.tx-table td{padding-block:14px}.tx-table tbody tr{transition:background .14s}.tx-table tbody tr:hover{background:light-dark(#f7faf7,#202c24)}
+.progress{height:9px}.progress>span{background:linear-gradient(90deg,#3d9069,#73b58c)}
+.modal{border:1px solid light-dark(#e4ebe5,#35443a);border-radius:22px}.toast{border-radius:14px;background:#174f3c}
+@media(max-width:950px){.layout{grid-template-columns:198px minmax(0,1fr)}.main{padding-inline:22px}.cards{gap:12px}}
+@media(max-width:680px){.topbar{padding:12px 15px}.brand{font-size:17px}.main{padding:20px 14px 96px}.page-head{margin-bottom:20px}.page-head h1{font-size:27px}.cards{gap:10px}.card,.panel{padding:15px;border-radius:17px}.stat-value{font-size:22px}.grid2{gap:11px}.btn{min-height:42px}.mobile-nav{backdrop-filter:blur(16px);box-shadow:0 -7px 25px #102c1b0b;border-top:1px solid light-dark(#e5ece6,#2b382f)}.modal{border-radius:20px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
 </style>
 <style>
 /* Acabado visual y accesibilidad */
