@@ -38,8 +38,10 @@
   function normalize(value){
     return String(value||'').toLocaleLowerCase('es-ES').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9ñ]+/g,' ').trim();
   }
+  const SYNONYMS={vacaciones:['viaje','viajes'],viaje:['vacaciones'],alimentacion:['comida'],comida:['alimentacion'],ahorrar:['ahorro'],ahorro:['ahorrar'],gastos:['gasto'],gasto:['gastos'],trabajo:['empleo'],empleo:['trabajo'],estudios:['estudiar'],estudiar:['estudios']};
   function terms(value){
-    return normalize(value).split(/\\s+/).filter(word=>word.length>1&&!STOP.has(word));
+    const base=normalize(value).split(/\\s+/).filter(word=>word.length>1&&!STOP.has(word));
+    return Array.from(new Set(base.concat(base.flatMap(word=>SYNONYMS[word]||[]))));
   }
   function relevance(fact,query){
     const q=terms(query),body=terms(fact.text);
