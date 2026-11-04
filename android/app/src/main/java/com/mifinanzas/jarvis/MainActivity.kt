@@ -10,6 +10,8 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import java.util.Locale
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.webkit.JavascriptInterface
@@ -58,6 +60,10 @@ class MainActivity : Activity() {
     private var textToSpeech: TextToSpeech? = null
     private var speechReady = false
     private var pendingListen = false
+    private var voiceSessionActive = false
+    private val voiceHandler = Handler(Looper.getMainLooper())
+    private val voiceRetry = Runnable { if (voiceSessionActive) startVoiceRecognition() }
+    private var voiceOutputDescription = "Voz española del dispositivo"
     private val audioPermissionRequest = 4108
     private val modelFile: File
         get() = File(getExternalFilesDir(null) ?: filesDir, modelName)
@@ -315,10 +321,13 @@ class MainActivity : Activity() {
 
     inner class NativeJarvisBridge {
         @JavascriptInterface
-        fun startListening() { runOnUiThread { startVoiceRecognition() } }
+        fun startListening() { runOnUiThread { voiceSessionActive = true; voiceHandler.removeCallbacks(voiceRetry); startVoiceRecognition() } }
 
         @JavascriptInterface
-        fun stopListening() { runOnUiThread { speechRecognizer?.cancel(); deliverSpeechState("idle", "Escucha detenida.") } }
+        fun stopListening() { runOnUiThread { voiceSessionActive = false; pendingListen = false; voiceHandler.removeCallbacks(voiceRetry); speechRecognizer?.cancel(); deliverSpeechState("idle", "Conversación por voz detenida.") } }
+
+        @JavascriptInterface
+        fun voiceStatus(): String = "Reconocimiento online preferente · $voiceOutputDescription"
 
         @JavascriptInterface
         fun speak(text: String) { runOnUiThread { speakText(text) } }
@@ -419,30 +428,46 @@ class MainActivity : Activity() {
                     override fun onBeginningOfSpeech() { deliverSpeechState("listening", "Te escucho…") }
                     override fun onRmsChanged(rmsdB: Float) { }
                     override fun onBufferReceived(buffer: ByteArray?) { }
-                    override fun onEndOfSpeech() { deliverSpeechState("processing", "Entendiendo…") }
+                    override fun onEndOfSpeech() { deliverSpeechState("processing", "Entendiendo tu mensaje…") }
                     override fun onError(error: Int) {
-                        val message = when (error) {
-                            SpeechRecognizer.ERROR_NO_MATCH -> "No he entendido lo que has dicho."
-                            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No he detectado voz."
-                            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Falta permiso para usar el micrófono."
-                            SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "El servicio de reconocimiento no tiene conexión."
-                            else -> "No se ha podido reconocer la voz (código $error)."
+                        when (error) {
+                            SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
+                                deliverSpeechState("listening", "No he detectado una frase completa. Sigo escuchando…")
+                                if (voiceSessionActive) voiceHandler.postDelayed(voiceRetry, 450)
+                            }
+                            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> {
+                                if (voiceSessionActive) voiceHandler.postDelayed(voiceRetry, 900)
+                            }
+                            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> {
+                                voiceSessionActive = false
+                                deliverSpeechState("error", "Falta permiso para usar el micrófono.")
+                            }
+                            SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT, SpeechRecognizer.ERROR_SERVER -> {
+                                deliverSpeechState("error", "El reconocimiento online no está disponible. Comprueba tu conexión e inténtalo de nuevo.")
+                            }
+                            else -> {
+                                if (voiceSessionActive) voiceHandler.postDelayed(voiceRetry, 700)
+                                else deliverSpeechState("error", "No se ha podido reconocer la voz (código $error).")
+                            }
                         }
-                        deliverSpeechState("error", message)
                     }
                     override fun onResults(results: Bundle?) {
                         val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
                         if (text.isNotBlank()) {
                             val quoted = JSONObject.quote(text)
-                            runOnUiThread { webView.evaluateJavascript("window.onJarvisSpeechResult && window.onJarvisSpeechResult($quoted);", null) }
+                            runOnUiThread {
+                                if (::webView.isInitialized) webView.evaluateJavascript("window.onJarvisSpeechResult && window.onJarvisSpeechResult($quoted);", null)
+                            }
+                        } else if (voiceSessionActive) {
+                            voiceHandler.postDelayed(voiceRetry, 350)
                         }
-                        deliverSpeechState("idle", if (text.isBlank()) "No he detectado palabras." else "Voz reconocida.")
+                        deliverSpeechState("processing", if (text.isBlank()) "No he detectado palabras." else "Preparando respuesta…")
                     }
                     override fun onPartialResults(partialResults: Bundle?) {
                         val text = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
                         if (text.isNotBlank()) {
                             val quoted = JSONObject.quote(text)
-                            runOnUiThread { webView.evaluateJavascript("window.onJarvisSpeechPartial && window.onJarvisSpeechPartial($quoted);", null) }
+                            runOnUiThread { if (::webView.isInitialized) webView.evaluateJavascript("window.onJarvisSpeechPartial && window.onJarvisSpeechPartial($quoted);", null) }
                         }
                     }
                     override fun onEvent(eventType: Int, params: Bundle?) { }
@@ -452,21 +477,47 @@ class MainActivity : Activity() {
         textToSpeech = TextToSpeech(this) { result ->
             speechReady = result == TextToSpeech.SUCCESS
             if (speechReady) {
-                textToSpeech?.language = Locale("es", "ES")
+                val tts = textToSpeech
+                try {
+                    val spanishVoices = tts?.voices?.filter {
+                        it.locale.language == "es" && (it.locale.country == "ES" || it.locale.country.isBlank())
+                    }.orEmpty()
+                    val networkVoice = spanishVoices.filter { it.isNetworkConnectionRequired }.maxByOrNull { it.quality }
+                    val bestAvailable = networkVoice ?: spanishVoices.maxByOrNull { it.quality }
+                    if (bestAvailable != null) {
+                        tts?.language = bestAvailable.locale
+                        tts?.voice = bestAvailable
+                        voiceOutputDescription = if (bestAvailable.isNetworkConnectionRequired) {
+                            "voz española online de alta calidad"
+                        } else {
+                            "voz española disponible en el dispositivo (sin voz online instalada)"
+                        }
+                    } else {
+                        tts?.language = Locale("es", "ES")
+                        voiceOutputDescription = "voz española predeterminada del motor Android"
+                    }
+                } catch (_: Exception) {
+                    tts?.language = Locale("es", "ES")
+                    voiceOutputDescription = "voz española predeterminada del motor Android"
+                }
                 textToSpeech?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                    override fun onStart(utteranceId: String?) { deliverSpeechState("speaking", "JARVIS está hablando…") }
+                    override fun onStart(utteranceId: String?) { deliverSpeechState("speaking", "J.A.R.V.I.S. está hablando…") }
                     override fun onDone(utteranceId: String?) {
-                        runOnUiThread { if (::webView.isInitialized) webView.evaluateJavascript("window.onJarvisSpeechFinished && window.onJarvisSpeechFinished();", null) }
-                        deliverSpeechState("idle", "Respuesta terminada.")
+                        runOnUiThread {
+                            if (::webView.isInitialized) webView.evaluateJavascript("window.onJarvisSpeechFinished && window.onJarvisSpeechFinished();", null)
+                        }
                     }
                     @Deprecated("Deprecated in Java")
-                    override fun onError(utteranceId: String?) { deliverSpeechState("error", "No se pudo reproducir la respuesta.") }
+                    override fun onError(utteranceId: String?) { deliverSpeechState("error", "No se pudo reproducir la respuesta hablada.") }
                 })
+            } else {
+                voiceOutputDescription = "voz no disponible; revisa el motor de síntesis de Android"
             }
         }
     }
 
     private fun startVoiceRecognition() {
+        if (!voiceSessionActive) return
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             pendingListen = true
             requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), audioPermissionRequest)
@@ -483,6 +534,8 @@ class MainActivity : Activity() {
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
                 putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, false)
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 1200)
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 900)
                 putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
             }
             recognizer.startListening(intent)
@@ -504,8 +557,8 @@ class MainActivity : Activity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == audioPermissionRequest) {
             val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
-            if (granted && pendingListen) { pendingListen = false; startVoiceRecognition() }
-            else { pendingListen = false; deliverSpeechState("error", "Necesito permiso de micrófono para escucharte.") }
+            if (granted && pendingListen) { pendingListen = false; voiceSessionActive = true; startVoiceRecognition() }
+            else { pendingListen = false; voiceSessionActive = false; deliverSpeechState("error", "Necesito permiso de micrófono para escucharte.") }
         }
     }
 
@@ -541,6 +594,8 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         fileChooserCallback?.onReceiveValue(null)
+        voiceSessionActive = false
+        voiceHandler.removeCallbacksAndMessages(null)
         speechRecognizer?.destroy()
         textToSpeech?.stop()
         textToSpeech?.shutdown()
