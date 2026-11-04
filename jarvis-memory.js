@@ -34,12 +34,45 @@
     return {removed};
   }
   function clear(){const n=load().length;save([]);return n}
-  function context(maxChars){
-    const facts=load(),limit=Math.max(200,Number(maxChars)||1400);
+  const STOP=new Set('a al algo algunas algunos ante antes como con contra cual cuando de del desde donde durante e el ella ellas ello ellos en entre era es esa esas ese eso esos esta estaba estas este esto estos fue ha hacia hasta hay la las le les lo los más mas me mi mis mucho muy no nos o para pero por porque que se sin sobre su sus te tu tus un una unas uno unos y ya'.split(' '));
+  function normalize(value){
+    return String(value||'').toLocaleLowerCase('es-ES').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9ñ]+/g,' ').trim();
+  }
+  function terms(value){
+    return normalize(value).split(/\\s+/).filter(word=>word.length>1&&!STOP.has(word));
+  }
+  function relevance(fact,query){
+    const q=terms(query),body=terms(fact.text);
+    if(!q.length)return 0;
+    const counts=new Map();
+    body.forEach(word=>counts.set(word,(counts.get(word)||0)+1));
+    let score=0,matched=0;
+    q.forEach(word=>{
+      const count=counts.get(word)||0;
+      if(count){matched++;score+=Math.min(2,count);}
+    });
+    const phrase=normalize(fact.text).includes(normalize(query));
+    if(phrase)score+=3;
+    return {score,matched,total:q.length,phrase};
+  }
+  function retrieve(query,limit){
+    const max=Math.max(1,Math.min(20,Number(limit)||6));
+    const facts=load();
+    if(!String(query||'').trim())return facts.slice(-max).reverse();
+    return facts.map((fact,index)=>{
+      const match=relevance(fact,query);
+      return {...fact,score:match.score,matchedTerms:match.matched,_index:index};
+    }).filter(f=>f.score>0&&f.matchedTerms>0)
+      .sort((a,b)=>b.score-a.score||b._index-a._index)
+      .slice(0,max).map(({_index,...fact})=>fact);
+  }
+  function context(maxChars,query){
+    const limit=Math.max(200,Number(maxChars)||1400);
+    const facts=query?retrieve(query,12):load().slice(-MAX_FACTS).reverse();
     let out='';
-    for(const fact of facts.slice(-MAX_FACTS).reverse()){
-      const line='- '+fact.text+'\n';
-      if(out.length+line.length>limit)break;
+    for(const fact of facts){
+      const line='- '+fact.text+'\\n';
+      if(out.length+line.length>limit)continue;
       out+=line;
     }
     return out.trim();
@@ -50,5 +83,5 @@
     const facts=incoming.filter(f=>f&&typeof f.text==='string').map(f=>({id:String(f.id||uid()),text:f.text.trim().slice(0,MAX_TEXT),createdAt:f.createdAt||new Date().toISOString(),updatedAt:f.updatedAt||f.createdAt||new Date().toISOString()})).filter(f=>f.text).slice(-MAX_FACTS);
     return save(facts);
   }
-  window.JarvisMemory={list,remember,remove,clear,context,exportData,importData};
+  window.JarvisMemory={list,remember,remove,clear,context,retrieve,exportData,importData};
 })();
