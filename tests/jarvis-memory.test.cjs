@@ -209,3 +209,29 @@ test('aprende decisiones y siguientes pasos expresados naturalmente en el proyec
   assert.match(context, /Gemma 4 E2B-it/);
   assert.match(context, /probar la memoria contextual/);
 });
+
+
+test('gestiona tareas independientes dentro de cada proyecto', () => {
+  const memory = createMemory();
+  const alpha = memory.createProject('Proyecto Alpha');
+  const beta = memory.createProject('Proyecto Beta');
+  const task = memory.addProjectTask(alpha.project.id, 'Diseñar el panel principal');
+  assert.equal(task.ok, true);
+  assert.equal(memory.addProjectTask(beta.project.id, 'Preparar documentación').ok, true);
+  assert.equal(memory.toggleProjectTask(alpha.project.id, task.task.id).task.done, true);
+  assert.equal(memory.getProject(alpha.project.id).tasks.length, 1);
+  assert.equal(memory.getProject(beta.project.id).tasks.length, 1);
+  assert.equal(memory.removeProjectTask(alpha.project.id, task.task.id).ok, true);
+  assert.equal(memory.getProject(alpha.project.id).tasks.length, 0);
+});
+
+test('guarda la descripción y conserva tareas al exportar e importar proyectos', () => {
+  const memory = createMemory();
+  const project = memory.createProject('JARVIS');
+  memory.updateProjectDescription(project.project.id, 'Asistente local con memoria por proyectos.');
+  memory.addProjectTask(project.project.id, 'Probar el espacio de trabajo');
+  const restored = createMemory();
+  assert.equal(restored.importData(memory.exportData()), true);
+  assert.equal(restored.getProject(project.project.id).description, 'Asistente local con memoria por proyectos.');
+  assert.equal(restored.getProject(project.project.id).tasks[0].title, 'Probar el espacio de trabajo');
+});
