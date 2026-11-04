@@ -333,7 +333,9 @@ class MainActivity : Activity() {
                     val answer = withContext(Dispatchers.IO) {
                         val output = StringBuilder()
                         conv.sendMessageAsync(promptText).collect { message ->
-                            output.append(message.toString())
+                            val part = message.toString()
+                            output.append(part)
+                            if (part.isNotEmpty()) deliverNativeChunk(requestId, part)
                         }
                         output.toString()
                     }
@@ -344,6 +346,17 @@ class MainActivity : Activity() {
                     busy = false
                 }
             }
+        }
+    }
+
+    private fun deliverNativeChunk(id: Int, chunk: String) {
+        runOnUiThread {
+            if (!::webView.isInitialized) return@runOnUiThread
+            val chunkJson = JSONObject.quote(chunk)
+            webView.evaluateJavascript(
+                "window.onNativeJarvisChunk && window.onNativeJarvisChunk($id, $chunkJson);",
+                null
+            )
         }
     }
 
