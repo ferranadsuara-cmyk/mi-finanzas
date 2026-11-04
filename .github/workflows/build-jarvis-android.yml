@@ -20,6 +20,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.13"
+      - name: Check JARVIS JavaScript syntax
+        run: node --check jarvis-memory.js
+      - name: Test JARVIS memory module
+        run: node --test tests/jarvis-memory.test.cjs
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
         working-directory: android
