@@ -8,6 +8,8 @@ vm.runInNewContext(source,context);
 const web=context.window.JarvisWeb;
 test('detecta búsquedas web y comparación de precios',()=>{
  assert.equal(web.detect('Busca auriculares Sony por menos de 100 euros').shopping,true);
+ assert.equal(web.detect('Busca una mochila para la universidad').shopping,true);
+ assert.equal(web.detect('Compara precios de un robot aspirador').shopping,true);
  assert.equal(web.detect('Compara precios de una cafetera DeLonghi').query,'una cafetera DeLonghi');
  assert.equal(web.detect('¿Qué tiempo hace?'),null);
  assert.equal(web.detect('Compara mis gastos con el mes anterior'),null);
