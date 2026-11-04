@@ -5,6 +5,7 @@ on:
     paths:
       - "android/**"
       - "index.html"
+      - "nueva-web/**"
       - "jarvis-memory.js"
       - "jarvis-tools.js"
       - "jarvis-web.js"
@@ -49,7 +50,7 @@ jobs:
         run: node --check jarvis-products.js
       - name: Test JARVIS products module
         run: node --test tests/jarvis-products.test.cjs
-      - name: Check inline application scripts
+      - name: Check inline application scripts (Mi Finanzas y nueva web)
         run: node tests/check-inline-scripts.cjs
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
