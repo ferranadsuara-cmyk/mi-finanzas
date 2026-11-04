@@ -37,7 +37,7 @@ jobs:
         run: node --check api/jarvis-search.js
       - name: Test web search API
         run: node --test tests/jarvis-search.test.cjs
-      - name: Check JARVIS web module syntax
+      - name: Check product page API syntax\n        run: node --check api/jarvis-product.js\n      - name: Test product page extraction\n        run: node --test tests/jarvis-product.test.cjs\n      - name: Check JARVIS web module syntax
         run: node --check jarvis-web.js
       - name: Test JARVIS web module
         run: node --test tests/jarvis-web.test.cjs
