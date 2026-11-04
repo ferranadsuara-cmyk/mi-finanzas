@@ -73,7 +73,7 @@
   function listStarredConversations(){return loadStarred().sort((a,b)=>String(b.savedAt).localeCompare(String(a.savedAt)))}
   function starConversation(messages){
     const items=(Array.isArray(messages)?messages:[]).filter(x=>x&&['user','assistant'].includes(x.role)&&typeof x.content==='string').slice(-40).map(x=>({role:x.role,content:x.content.slice(0,1800)}));
-    if(items.some(x=>/\\b(contrase(?:ñ|n)a|password|pin|cvv|cvc|n[uú]mero de tarjeta|tarjeta bancaria)\\b/i.test(x.content)||/\\b\\d{13,19}\\b/.test(x.content)))return {ok:false,error:'No guardaré una conversación que contenga contraseñas, PIN, códigos de seguridad o números de tarjeta.'};
+    if(items.some(x=>/\b(contrase(?:ñ|n)a|password|pin|cvv|cvc|n[uú]mero de tarjeta|tarjeta bancaria)\b/i.test(x.content)||/\b\d{13,19}\b/.test(x.content)))return {ok:false,error:'No guardaré una conversación que contenga contraseñas, PIN, códigos de seguridad o números de tarjeta.'};
     const userMessages=items.filter(x=>x.role==='user').map(x=>x.content.trim()).filter(Boolean);
     if(!userMessages.length)return {ok:false,error:'Todavía no hay mensajes que guardar en esta conversación.'};
     const summary=userMessages.join(' · ').slice(0,1400),title=(userMessages[0].replace(/\s+/g,' ').slice(0,64)||'Conversación favorita');
