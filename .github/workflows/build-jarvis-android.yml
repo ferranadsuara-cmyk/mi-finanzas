@@ -9,6 +9,7 @@ on:
       - "jarvis-memory.js"
       - "jarvis-tools.js"
       - "jarvis-web.js"
+      - "jarvis-research.js"
       - "jarvis-products.js"
       - "api/**"
       - "sw.js"
