@@ -36,7 +36,7 @@ test('selecciona hasta tres fuentes de dominios distintos',()=>{
   {title:'D',url:'https://tercera.net/d'},
   {title:'E',url:'javascript:alert(1)'}
  ],3);
- assert.deepEqual(chosen.map(x=>x.title),['A','C','D']);
+ assert.equal(Array.from(chosen, x=>x.title).join(','),'A,C,D');
 });
 test('prepara evidencia de lectura con fecha, dominio y errores',()=>{
  const out=web.researchEvidence([{title:'Informe',canonicalUrl:'https://fuente.es/informe',publishedAt:'2026-11-01',description:'Resumen',headings:['Datos'],text:'Contenido útil'},{url:'https://fallo.org',readError:'Bloqueado'}]);
