@@ -40,12 +40,12 @@
  async function inspect(url){const params=new URLSearchParams({url:String(url||'')});const response=await fetch('/api/jarvis-product?'+params.toString(),{headers:{Accept:'application/json'},credentials:'same-origin'});let payload={};try{payload=await response.json()}catch(_){}if(!response.ok)throw new Error(payload.error||'No se ha podido analizar la página del producto.');return payload.product;}
  function selectResearchPages(results,limit=3,excludeUrls=[]){
   const picked=[],domains=new Set();
-  for(const value of excludeUrls||[]){try{domains.add(new URL(value).hostname.toLowerCase().replace(/^www\\./,''))}catch(_){}}
+  for(const value of excludeUrls||[]){try{domains.add(new URL(value).hostname.toLowerCase().replace(/^www\./,''))}catch(_){}}
   for(const r of results||[]){
    try{
     const u=new URL(r.url);
     if(u.protocol!=='https:'&&u.protocol!=='http:')continue;
-    const domain=u.hostname.toLowerCase().replace(/^www\\./,'');
+    const domain=u.hostname.toLowerCase().replace(/^www\./,'');
     if(domains.has(domain))continue;
     domains.add(domain);picked.push(r);
     if(picked.length>=limit)break;
