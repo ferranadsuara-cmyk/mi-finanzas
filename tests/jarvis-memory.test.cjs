@@ -198,3 +198,14 @@ test('no mezcla notas si se indica un proyecto inexistente', () => {
   assert.equal(result.ok, false);
   assert.equal(project.project.notes.length, 0);
 });
+
+
+test('aprende decisiones y siguientes pasos expresados naturalmente en el proyecto activo', () => {
+  const memory = createMemory();
+  memory.createProject('JARVIS');
+  assert.equal(memory.learnProjectFromMessage('Hemos decidido que Gemma 4 E2B-it será el modelo local.').saved, true);
+  assert.equal(memory.learnProjectFromMessage('El siguiente paso es probar la memoria contextual.').saved, true);
+  const context = memory.projectContext('¿Qué hemos decidido para JARVIS?', 1000);
+  assert.match(context, /Gemma 4 E2B-it/);
+  assert.match(context, /probar la memoria contextual/);
+});
