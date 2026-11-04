@@ -23,7 +23,7 @@ function safeUrl(href) {
     const parsed = new URL(decoded, 'https://duckduckgo.com');
     if (parsed.hostname.endsWith('duckduckgo.com')) {
       const target = parsed.searchParams.get('uddg');
-      if (target) decoded = decodeURIComponent(target);
+      if (target) decoded = target;
     }
     const url = new URL(decoded);
     if (!['https:', 'http:'].includes(url.protocol)) return null;
