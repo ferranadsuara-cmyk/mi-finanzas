@@ -38,16 +38,23 @@ async function exportData(){
 async function importData(payload){
  if(!payload||payload.version!==1||!Array.isArray(payload.documents))throw new Error('La biblioteca de documentos de la copia no tiene un formato válido.');
  if(payload.documents.length>900)throw new Error('La copia contiene demasiados documentos.');
- let total=0;
+ let total=0,textTotal=0;
  const records=payload.documents.map(item=>{
-  if(!item||typeof item.projectId!=='string'||typeof item.name!=='string'||typeof item.blobBase64!=='string')throw new Error('Hay un documento dañado en la copia.');
-  const size=Number(item.size)||0;total+=size;
-  if(size<0||size>MAX_FILE||total>40*1024*1024)throw new Error('La biblioteca supera el límite de restauración de 40 MB o contiene un archivo demasiado grande.');
+  if(!item||typeof item.projectId!=='string'||!item.projectId.trim()||item.projectId.length>200||typeof item.name!=='string'||typeof item.blobBase64!=='string')throw new Error('Hay un documento dañado en la copia.');
+  const size=Number(item.size);
+  const valid=validateFileInfo({name:item.name,size});
+  if(!valid.ok)throw new Error('No se puede restaurar «'+item.name+'»: '+valid.error);
+  total+=size;
+  const text=typeof item.text==='string'?item.text:'';
+  textTotal+=text.length;
+  if(total>40*1024*1024||text.length>MAX_TEXT||textTotal>20*1024*1024)throw new Error('La biblioteca supera los límites de restauración de la copia.');
+  const expectedBase64Length=Math.ceil(size/3)*4;
+  if(item.blobBase64.length!==expectedBase64Length)throw new Error('Un archivo de la copia tiene un tamaño codificado incorrecto.');
   const binary=atob(item.blobBase64),bytes=new Uint8Array(binary.length);
   for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
   if(bytes.byteLength!==size)throw new Error('El tamaño de un documento no coincide con la copia.');
   const {blobBase64,...meta}=item;
-  return {...meta,blob:new Blob([bytes],{type:String(item.type||'application/octet-stream')})};
+  return {...meta,extension:valid.extension,kind:valid.kind,text,blob:new Blob([bytes],{type:String(item.type||'application/octet-stream')})};
  });
  await transaction('readwrite',store=>{store.clear();records.forEach(record=>store.put(record))});
  return {count:records.length,totalBytes:total};
