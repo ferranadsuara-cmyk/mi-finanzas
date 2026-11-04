@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const source=fs.readFileSync(require('node:path').join(__dirname,'..','jarvis-web.js'),'utf8');
-const context={window:{},String,RegExp,encodeURIComponent,fetch:async()=>{}};
+const context={window:{},String,RegExp,URL,encodeURIComponent,fetch:async()=>{}};
 vm.runInNewContext(source,context);
 const web=context.window.JarvisWeb;
 test('detecta búsquedas web y comparación de precios',()=>{
