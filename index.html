@@ -312,16 +312,16 @@ function handleJarvisProductCommand(question){
  const q=String(question||'').trim();
  if(/^(mis productos guardados|qué productos tengo guardados|que productos tengo guardados|enséñame mis productos|enseñame mis productos)$/i.test(q)){
   const items=window.JarvisProducts.list();
-  return items.length?'Productos guardados ('+items.length+'):\\n'+items.map((p,i)=>(i+1)+'. '+p.title+' · '+(p.price===null?'precio no detectado':eur(p.price))+' · '+p.store+'\\n'+p.url).join('\\n'):'Todavía no tienes productos guardados. Primero busca un producto y después dime «guarda el primer producto».';
+  return items.length?'Productos guardados ('+items.length+'):\n'+items.map((p,i)=>(i+1)+'. '+p.title+' · '+(p.price===null?'precio no detectado':eur(p.price))+' · '+p.store+'\n'+p.url).join('\n'):'Todavía no tienes productos guardados. Primero busca un producto y después dime «guarda el primer producto».';
  }
  if(/^(compara mis productos guardados|compara los productos guardados|compara mis productos)$/i.test(q)){
   const rows=window.JarvisProducts.compare().filter(p=>p.price!==null).sort((a,b)=>a.price-b.price);
-  return rows.length?'Comparación por precio observado (no garantiza que los productos sean equivalentes):\\n'+rows.map((p,i)=>(i+1)+'. '+p.title+' · '+eur(p.price)+' · '+p.store+'\\n'+p.url).join('\\n'):'No hay suficientes productos guardados con un precio en euros detectable para compararlos.';
+  return rows.length?'Comparación por precio observado (no garantiza que los productos sean equivalentes):\n'+rows.map((p,i)=>(i+1)+'. '+p.title+' · '+eur(p.price)+' · '+p.store+'\n'+p.url).join('\n'):'No hay suficientes productos guardados con un precio en euros detectable para compararlos.';
  }
- const saveMatch=q.match(/^(?:jarvis[, ]*)?(?:guarda|guardar|añade a favoritos|añade a favoritos)\\s+(?:el\\s+)?(?:primer|segundo|tercer|\\d+º? )?producto?$/i);
+ const saveMatch=q.match(/^(?:jarvis[, ]*)?(?:guarda|guardar|añade a favoritos|añade a favoritos)\s+(?:el\s+)?(?:primer|segundo|tercer|\d+º? )?producto?$/i);
  if(saveMatch){
   if(!jarvisLastWebResults.length)return 'Primero realiza una búsqueda de productos. Después podré guardar uno de sus resultados.';
-  const ordinal=/segundo/i.test(q)?1:/tercer/i.test(q)?2:/\\b(\\d+)º?\\b/.test(q)?Math.max(0,Number(q.match(/\\b(\\d+)º?\\b/)[1])-1):0;
+  const ordinal=/segundo/i.test(q)?1:/tercer/i.test(q)?2:/\b(\d+)º?\b/.test(q)?Math.max(0,Number(q.match(/\b(\d+)º?\b/)[1])-1):0;
   const item=jarvisLastWebResults[ordinal];
   if(!item)return 'No encuentro ese resultado en la última búsqueda.';
   try{window.JarvisProducts.save({...item,...(item.productDetails||{}),title:(item.productDetails&&item.productDetails.title)||item.title,price:item.productDetails&&item.productDetails.price!==null?item.productDetails.price:item.price,store:item.store});return 'He guardado «'+item.title+'» en tus productos favoritos. Precio detectado: '+(window.JarvisProducts.normalize(item).price===null?'no aparece un precio verificable':eur(window.JarvisProducts.normalize(item).price))+'. Puedes decir «mis productos guardados» o «compara mis productos guardados».'}catch(e){return e.message}
