@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "android/**"
+      - "android/**"\n      - "index.html"
       - ".github/workflows/build-jarvis-android.yml"
 jobs:
   build:
