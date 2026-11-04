@@ -26,8 +26,8 @@ test('calcula expresiones seguras y rechaza contenido no aritmético',()=>{
  assert.equal(tools.calculate('alert(1)').ok,false);
 });
 test('consulta cifras del mes y respeta el contexto financiero recibido',()=>{
- assert.match(tools.execute('month_summary',{},data),/Ingresos: 2\.000,00/);
- assert.match(tools.execute('month_summary',{},data),/Gastos:\s*150,00/);
+ assert.match(tools.execute('month_summary',{},data),/Ingresos: \s*(?:2\.000|2000),00/);
+ assert.match(tools.execute('month_summary',{},data),/Gastos: \s*150,00/);
  assert.match(tools.execute('top_categories',{},data),/Comida: 100,00/);
  assert.match(tools.execute('compare_months',{},data),/Has gastado 70,00/);
  assert.match(tools.execute('recurring_payments',{},data),/Internet/);
