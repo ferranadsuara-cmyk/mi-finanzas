@@ -11,9 +11,13 @@ function decode(s) {
 }
 function plain(s) { return decode(String(s || '').replace(/<script\b[\s\S]*?<\/script>/gi, ' ').replace(/<style\b[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim().slice(0, 1200); }
 function meta(html, key) {
-  const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const re = new RegExp('<meta\\b(?=[^>]*(?:property|name)=["\\']' + escaped + '["\\'])(?=[^>]*content=["\\']([^"\\']*)["\\'])[^>]*>', 'i');
-  const m = html.match(re); return m ? decode(m[1]).trim() : '';
+  const tags = html.match(/<meta\\b[^>]*>/gi) || [];
+  for (const tag of tags) {
+    const name = tag.match(/\\b(?:property|name)\\s*=\\s*(["'])(.*?)\\1/i);
+    const value = tag.match(/\\bcontent\\s*=\\s*(["'])(.*?)\\1/i);
+    if (name && value && name[2].toLowerCase() === key.toLowerCase()) return decode(value[2]).trim();
+  }
+  return '';
 }
 function allProducts(value, out) {
   if (!value || typeof value !== 'object') return;
