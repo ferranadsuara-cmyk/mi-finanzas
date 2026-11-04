@@ -11,7 +11,8 @@
   const commerceWords=/\b(precio|precios|comprar|comprarme|compra|tienda|tiendas|sucursal|sucursales|oferta|ofertas|barato|barata|baratos|baratas|coste|cuesta|valen|descuento|rebaja|stock|disponible|comparar|comparame|recomiendame|recomienda|mejor precio|donde sale|vale|auriculares|cascos|movil|móvil|telefono|teléfono|portatil|portátil|ordenador|tablet|televisor|zapatillas|mochila|nevera|lavadora|consola|aspirador|cafetera|monitor|teclado|raton|ratón|ropa|perfume|bicicleta|silla|mesa|producto)\b/i.test(original);
   const purchasePhrase=/\b(?:quiero|me quiero|necesito|busco|estoy buscando|me recomiendas)\s+(?:comprar|comprarme|un|una|unos|unas|el|la|los|las)\b/i.test(q);
   const genericProductSearch=/\b(?:busca(?:me)?|encuentra(?:me)?|dime donde comprar|donde puedo comprar)\b/i.test(original)&&!/\b(?:informacion|información|noticias|historia|definicion|definición|como funciona|cómo funciona|que es|qué es|reseñas|opiniones)\b/i.test(q);
-  const informationalSearch=/\b(?:informacion|información|noticias|historia|definicion|definición|como funciona|cómo funciona|que es|qué es)\b/i.test(q);\n  const shopping=!informationalSearch&&(commerceWords||purchasePhrase||genericProductSearch);
+  const informationalSearch=/\b(?:informacion|información|noticias|historia|definicion|definición|como funciona|cómo funciona|que es|qué es)\b/i.test(q);
+  const shopping=!informationalSearch&&(commerceWords||purchasePhrase||genericProductSearch);
   return {query:query.slice(0,180),shopping};
  }
  function getLocation(){try{return localStorage.getItem(LOCATION_KEY)||''}catch(_){return ''}}
