@@ -64,3 +64,30 @@ test('limita el contexto para no saturar el modelo local', () => {
   assert.ok(memory.context(250).length <= 250);
   assert.equal(memory.list().length, 20);
 });
+
+
+test('recupera recuerdos relevantes por significado léxico y no solo por antigüedad', () => {
+  const memory = createMemory();
+  memory.remember('Estoy ahorrando para un viaje a Japón.');
+  memory.remember('Prefiero respuestas breves y directas.');
+  memory.remember('Mi presupuesto mensual para comida es de 250 euros.');
+  const travel = memory.retrieve('¿Qué había dicho sobre mis vacaciones?', 5);
+  assert.equal(travel[0].text, 'Estoy ahorrando para un viaje a Japón.');
+  const food = memory.context(500, '¿Cuánto destino a alimentación cada mes?');
+  assert.match(food, /presupuesto mensual para comida/);
+  assert.doesNotMatch(food, /viaje a Japón/);
+});
+
+test('no inyecta recuerdos irrelevantes en consultas sin coincidencias', () => {
+  const memory = createMemory();
+  memory.remember('Prefiero estudiar matemáticas por la mañana.');
+  assert.equal(memory.context(500, '¿Quién ganó el último campeonato de ajedrez?'), '');
+});
+
+test('mantiene compatibilidad con el contexto reciente cuando no se proporciona consulta', () => {
+  const memory = createMemory();
+  memory.remember('Primer recuerdo.');
+  memory.remember('Segundo recuerdo.');
+  assert.match(memory.context(500), /Segundo recuerdo/);
+  assert.match(memory.context(500), /Primer recuerdo/);
+});
