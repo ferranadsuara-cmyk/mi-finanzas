@@ -38,6 +38,15 @@ test('selecciona hasta tres fuentes de dominios distintos',()=>{
  ],3);
  assert.equal(Array.from(chosen, x=>x.title).join(','),'A,C,D');
 });
+test('evita repetir dominios ya consultados durante una ampliación',()=>{
+ const chosen=web.selectResearchPages([
+  {title:'Ya leída',url:'https://www.ejemplo.es/a'},
+  {title:'Mismo dominio',url:'https://ejemplo.es/b'},
+  {title:'Nueva fuente',url:'https://otra.org/c'}
+ ],2,['https://ejemplo.es/a']);
+ assert.equal(chosen.length,1);
+ assert.equal(chosen[0].title,'Nueva fuente');
+});
 test('prepara evidencia de lectura con fecha, dominio y errores',()=>{
  const out=web.researchEvidence([{title:'Informe',canonicalUrl:'https://fuente.es/informe',publishedAt:'2026-11-01',description:'Resumen',headings:['Datos'],text:'Contenido útil'},{url:'https://fallo.org',readError:'Bloqueado'}]);
  assert.match(out,/fuente.es/);assert.match(out,/2026-11-01/);assert.match(out,/Contenido útil/);assert.match(out,/Bloqueado/);
