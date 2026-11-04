@@ -85,6 +85,47 @@
     try{localStorage.setItem(CHAT_KEY,JSON.stringify(chats.slice(-20)));return {ok:true,duplicate:false,conversation:saved}}catch(_){return {ok:false,error:'No hay espacio disponible para guardar esta conversación en el dispositivo.'}}
   }
   function unstarConversation(id){const chats=loadStarred(),kept=chats.filter(x=>x.id!==String(id)),removed=chats.length-kept.length;if(removed)localStorage.setItem(CHAT_KEY,JSON.stringify(kept));return removed}
+
+  const CORRECTION_KEY='jarvis_correction_signals_v1';
+  function correctionPreference(message){
+    const text=normalize(message);
+    const rules=[
+      {key:'brevity',match:/\b(mas breve|mas corto|mas conciso|ve al grano|no te enrolles|responde breve)\b/,value:'Prefiero respuestas breves y directas.'},
+      {key:'steps',match:/\b(paso a paso|por pasos|uno por uno|desglosa los pasos)\b/,value:'Prefiero explicaciones paso a paso.'},
+      {key:'simple',match:/\b(mas sencillo|mas simple|lenguaje sencillo|explicalo facil|facil de entender)\b/,value:'Prefiero explicaciones sencillas y fáciles de entender.'},
+      {key:'detail',match:/\b(mas detalle|mas completo|con mas profundidad|no omitas detalles)\b/,value:'Prefiero explicaciones completas y detalladas.'},
+      {key:'exam',match:/\b(como en un examen|para examen|respuesta de examen|formato examen)\b/,value:'Cuando estudio, prefiero respuestas redactadas como en un examen.'},
+      {key:'no-tables',match:/\b(sin tablas|no uses tablas|no me pongas tablas)\b/,value:'Prefiero que no uses tablas.'},
+      {key:'tables',match:/\b(con tablas|usa tablas|ponlo en una tabla)\b/,value:'Prefiero que uses tablas cuando ayuden a organizar la información.'},
+      {key:'valencian',match:/\b(en valenciano|en valencia)\b/,value:'Prefiero respuestas en valenciano.'},
+      {key:'spanish',match:/\b(en castellano|en espanol)\b/,value:'Prefiero respuestas en castellano.'}
+    ];
+    return rules.find(rule=>rule.match.test(text))||null;
+  }
+  function learnFromCorrection(message){
+    const text=String(message||'').trim();
+    const rule=correctionPreference(text);
+    if(!rule)return {recognized:false,saved:false};
+    const explicit=/\b(a partir de ahora|siempre|por norma general|en general|cuando te pida|quiero que recuerdes|recuerda que prefiero|mi preferencia es)\b/i.test(text);
+    let signals=[];
+    try{const stored=JSON.parse(localStorage.getItem(CORRECTION_KEY)||'[]');signals=Array.isArray(stored)?stored:[]}catch(_){}
+    const recent=signals.filter(x=>x&&x.key===rule.key).slice(-3);
+    const count=recent.length+1;
+    signals.push({key:rule.key,at:Date.now()});
+    try{localStorage.setItem(CORRECTION_KEY,JSON.stringify(signals.slice(-30)))}catch(_){}
+    if(!explicit&&count<2)return {recognized:true,saved:false,count,preference:rule.value};
+    const facts=load(),prefix='Preferencia de respuesta: ';
+    const textToSave=prefix+rule.value;
+    const existing=facts.find(f=>f.text.startsWith(prefix)&&f.text!==textToSave);
+    if(existing){
+      existing.text=textToSave;existing.updatedAt=new Date().toISOString();
+      if(!save(facts))return {recognized:true,saved:false,error:'No se pudo actualizar la memoria.'};
+      return {recognized:true,saved:true,updated:true,fact:existing};
+    }
+    const result=remember(textToSave,{source:'automatic'});
+    return {recognized:true,saved:!!result.ok&&!result.duplicate,duplicate:!!result.duplicate,fact:result.fact||null,error:result.error||null};
+  }
+
   function learnFromMessage(message){
     const text=String(message||'').replace(/\s+/g,' ').trim();
     if(!text||text.length<8||text.length>2000||/[¿?]/.test(text))return {saved:false};
@@ -119,5 +160,5 @@
     const facts=incoming.filter(f=>f&&typeof f.text==='string').map(f=>({id:String(f.id||uid()),text:f.text.trim().slice(0,MAX_TEXT),createdAt:f.createdAt||new Date().toISOString(),updatedAt:f.updatedAt||f.createdAt||new Date().toISOString()})).filter(f=>f.text).slice(-MAX_FACTS);
     const ok=save(facts);if(Array.isArray(payload&&payload.starredConversations)){try{localStorage.setItem(CHAT_KEY,JSON.stringify(payload.starredConversations.filter(x=>x&&typeof x.id==='string'&&typeof x.title==='string'&&typeof x.summary==='string').slice(-20)))}catch(_){}}return ok;
   }
-  window.JarvisMemory={list,remember,remove,clear,context,retrieve,learnFromMessage,starConversation,listStarredConversations,unstarConversation,exportData,importData};
+  window.JarvisMemory={list,remember,remove,clear,context,retrieve,learnFromMessage,learnFromCorrection,starConversation,listStarredConversations,unstarConversation,exportData,importData};
 })();
