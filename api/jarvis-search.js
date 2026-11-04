@@ -28,15 +28,15 @@ async function handler(req,res){
   const searches=shopping?[
    {q:q+' precio comprar España',type:'general'},
    ...RETAILERS.map(r=>({q:q+' precio site:'+r.domain,type:r.name})),
-   ...(location?[{q:q+' precio tienda física disponibilidad sucursal '+location,type:'sucursal'}]:[])
+   ...(location?RETAILERS.map(r=>({q:q+' precio tienda física '+location+' site:'+r.domain,type:r.name+' · sucursales en '+location})):[])
   ]:[{q,type:'general'}];
   const pages=await Promise.all(searches.map(async s=>{try{return {type:s.type,html:await fetchSearch(s.q)}}catch(_){return {type:s.type,html:''}}}));
   const results=[],seen=new Set();
   for(const page of pages){for(const item of parseResults(page.html,shopping?4:6,page.type)){if(seen.has(item.url))continue;seen.add(item.url);results.push(item)}}
-  const limited=results.slice(0,shopping?24:6);
+  const limited=results.slice(0,shopping?(location?36:24):6);
   if(!limited.length)return res.status(503).json({error:'El buscador no ha devuelto resultados. Puede haber limitado temporalmente la consulta.'});
   res.setHeader('Cache-Control','public, s-maxage=120, stale-while-revalidate=300');
-  return res.status(200).json({provider:'DuckDuckGo',query:q,shopping,location:location||null,searchedAt:new Date().toISOString(),results:limited,retailersSearched:shopping?RETAILERS.map(r=>r.name):[]});
+  return res.status(200).json({provider:'DuckDuckGo',query:q,shopping,location:location||null,searchedAt:new Date().toISOString(),results:limited,retailersSearched:shopping?RETAILERS.map(r=>r.name):[],locationSearch:!!(shopping&&location),availabilityNote:'Los resultados no confirman stock. Un precio local solo se considera confirmado si la fuente identifica explícitamente la sucursal.'});
  }catch(_){return res.status(504).json({error:'La búsqueda ha tardado demasiado o no hay conexión. Inténtalo de nuevo.'})}
 }
 module.exports=handler;module.exports.parseResults=parseResults;module.exports.cleanText=cleanText;module.exports.allowedQuery=allowedQuery;module.exports.extractPrice=extractPrice;
