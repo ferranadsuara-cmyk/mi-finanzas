@@ -73,7 +73,7 @@
   const items=[],seen=new Set();
   (pages||[]).forEach((p)=>{const url=p.canonicalUrl||p.url;if(!url)return;try{const u=new URL(url);if(!/^https?:$/.test(u.protocol)||seen.has(u.href))return;seen.add(u.href);items.push({title:p.title||u.hostname,url:u.href,kind:p.readError?'resultado no leído':'página leída'});}catch(_){}});
   (results||[]).forEach((r)=>{if(!r.url)return;try{const u=new URL(r.url);if(!/^https?:$/.test(u.protocol)||seen.has(u.href))return;seen.add(u.href);items.push({title:r.title||u.hostname,url:u.href,kind:'resultado de búsqueda'});}catch(_){}});
-  return items.map((x,i)=>'['+(i+1)+'] '+x.title+' ('+x.kind+')\\n'+x.url).join('\\n');
+  return items.map((x,i)=>'['+(i+1)+'] '+x.title+' ('+x.kind+')\n'+x.url).join('\n');
  }
  function sourceAssessment(results,pages){
   const read=(pages||[]).filter(p=>p.text&&!p.readError),failed=(pages||[]).filter(p=>p.readError),domains=new Set();
