@@ -34,6 +34,6 @@
   return payload;
  }
  async function inspect(url){const params=new URLSearchParams({url:String(url||'')});const response=await fetch('/api/jarvis-product?'+params.toString(),{headers:{Accept:'application/json'},credentials:'same-origin'});let payload={};try{payload=await response.json()}catch(_){}if(!response.ok)throw new Error(payload.error||'No se ha podido analizar la página del producto.');return payload.product;}
- function evidence(payload){return (payload.results||[]).map((r,i)=>(i+1)+'. Tienda: '+(r.store||'no identificada')+'\n'+r.title+'\nURL: '+r.url+'\nPrecio detectado automáticamente: '+(r.price===null?'no detectado':r.price+' €')+'\nResumen: '+(r.snippet||'Sin descripción disponible')).join('\n\n')}
+ function evidence(payload){return (payload.results||[]).map((r,i)=>{const local=String(r.queryType||'').includes('sucursales en ');return (i+1)+'. Tienda/retailer: '+(r.store||'no identificada')+'\nÁmbito: '+(local?'búsqueda local (no confirma sucursal concreta)':'resultado web/online (no confirma stock)')+'\n'+r.title+'\nURL: '+r.url+'\nPrecio detectado en fragmento: '+(r.price===null?'no detectado':r.price+' €')+'\nOrigen del precio: '+(r.priceSource==='search-snippet'?'fragmento del buscador, pendiente de verificar en la tienda':'no detectado')+'\nResumen: '+(r.snippet||'Sin descripción disponible')}).join('\n\n')}
  window.JarvisWeb={detect,search,inspect,evidence,getLocation,setLocation,locationCommand};
 })();
