@@ -1,5 +1,5 @@
-const CACHE_NAME = 'mi-finanzas-v31';
-const APP_FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg', './jarvis-worker.js', './jarvis-memory.js'];
+const CACHE_NAME = 'mi-finanzas-v32';
+const APP_FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg', './jarvis-worker.js', './jarvis-memory.js', './jarvis-tools.js'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_FILES)));
