@@ -11,10 +11,10 @@ function decode(s) {
 }
 function plain(s) { return decode(String(s || '').replace(/<script\b[\s\S]*?<\/script>/gi, ' ').replace(/<style\b[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim().slice(0, 1200); }
 function meta(html, key) {
-  const tags = html.match(/<meta\\b[^>]*>/gi) || [];
+  const tags = html.match(/<meta\b[^>]*>/gi) || [];
   for (const tag of tags) {
-    const name = tag.match(/\\b(?:property|name)\\s*=\\s*(["'])(.*?)\\1/i);
-    const value = tag.match(/\\bcontent\\s*=\\s*(["'])(.*?)\\1/i);
+    const name = tag.match(/\b(?:property|name)\s*=\s*(["'])(.*?)\1/i);
+    const value = tag.match(/\bcontent\s*=\s*(["'])(.*?)\1/i);
     if (name && value && name[2].toLowerCase() === key.toLowerCase()) return decode(value[2]).trim();
   }
   return '';
