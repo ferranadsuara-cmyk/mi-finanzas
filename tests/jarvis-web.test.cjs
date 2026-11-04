@@ -27,3 +27,18 @@ test('formatea resultados como evidencia con URL',()=>{
  const local=web.evidence({results:[{store:'MediaMarkt',title:'Producto',url:'https://mediamarkt.es/item',price:89.9,priceSource:'search-snippet',queryType:'MediaMarkt · sucursales en Valencia'}]});
  assert.match(local,/no confirma sucursal concreta/);assert.match(local,/pendiente de verificar/);
 });
+
+test('selecciona hasta tres fuentes de dominios distintos',()=>{
+ const chosen=web.selectResearchPages([
+  {title:'A',url:'https://www.ejemplo.es/a'},
+  {title:'B',url:'https://ejemplo.es/b'},
+  {title:'C',url:'https://otra.org/c'},
+  {title:'D',url:'https://tercera.net/d'},
+  {title:'E',url:'javascript:alert(1)'}
+ ],3);
+ assert.deepEqual(chosen.map(x=>x.title),['A','C','D']);
+});
+test('prepara evidencia de lectura con fecha, dominio y errores',()=>{
+ const out=web.researchEvidence([{title:'Informe',canonicalUrl:'https://fuente.es/informe',publishedAt:'2026-11-01',description:'Resumen',headings:['Datos'],text:'Contenido útil'},{url:'https://fallo.org',readError:'Bloqueado'}]);
+ assert.match(out,/fuente.es/);assert.match(out,/2026-11-01/);assert.match(out,/Contenido útil/);assert.match(out,/Bloqueado/);
+});
