@@ -40,20 +40,33 @@
  async function inspect(url){const params=new URLSearchParams({url:String(url||'')});const response=await fetch('/api/jarvis-product?'+params.toString(),{headers:{Accept:'application/json'},credentials:'same-origin'});let payload={};try{payload=await response.json()}catch(_){}if(!response.ok)throw new Error(payload.error||'No se ha podido analizar la página del producto.');return payload.product;}
  function selectResearchPages(results,limit=3){
   const picked=[],domains=new Set();
-  for(const r of results||[]){try{const u=new URL(r.url);if(u.protocol!=='https:'&&u.protocol!=='http:')continue;const domain=u.hostname.toLowerCase().replace(/^www\\./,'');if(domains.has(domain))continue;domains.add(domain);picked.push(r);if(picked.length>=limit)break;}catch(_){}}
+  for(const r of results||[]){
+   try{
+    const u=new URL(r.url);
+    if(u.protocol!=='https:'&&u.protocol!=='http:')continue;
+    const domain=u.hostname.toLowerCase().replace(/^www\./,'');
+    if(domains.has(domain))continue;
+    domains.add(domain);picked.push(r);
+    if(picked.length>=limit)break;
+   }catch(_){}
+  }
   return picked;
  }
  function researchEvidence(pages){
-  return (pages||[]).map((p,i)=>[
-   'FUENTE '+(i+1)+': '+(p.title||'Título no disponible'),
-   'URL: '+(p.canonicalUrl||p.url||'no disponible),
-   'Dominio: '+(()=>{try{return new URL(p.canonicalUrl||p.url).hostname}catch(_){return 'no identificado'}})(),
-   'Fecha de publicación: '+(p.publishedAt||'no indicada'),
-   'Descripción: '+(p.description||'no disponible'),
-   'Apartados: '+((p.headings||[]).join(' | ')||'no extraídos'),
-   'Texto extraído: '+(p.text||'no disponible'),
-   'Incidencia de lectura: '+(p.readError||'ninguna')
-  ].join('\\n')).join('\\n\\n');
+  return (pages||[]).map((p,i)=>{
+   let domain='no identificado';
+   try{domain=new URL(p.canonicalUrl||p.url).hostname}catch(_){}
+   return [
+    'FUENTE '+(i+1)+': '+(p.title||'Título no disponible'),
+    'URL: '+(p.canonicalUrl||p.url||'no disponible'),
+    'Dominio: '+domain,
+    'Fecha de publicación: '+(p.publishedAt||'no indicada'),
+    'Descripción: '+(p.description||'no disponible'),
+    'Apartados: '+((p.headings||[]).join(' | ')||'no extraídos'),
+    'Texto extraído: '+(p.text||'no disponible'),
+    'Incidencia de lectura: '+(p.readError||'ninguna')
+   ].join('\n');
+  }).join('\n\n');
  }
  function evidence(payload){return (payload.results||[]).map((r,i)=>{const local=String(r.queryType||'').includes('sucursales en ');return (i+1)+'. Tienda/retailer: '+(r.store||'no identificada')+'\nÁmbito: '+(local?'búsqueda local (no confirma sucursal concreta)':'resultado web/online (no confirma stock)')+'\n'+r.title+'\nURL: '+r.url+'\nPrecio detectado en fragmento: '+(r.price===null?'no detectado':r.price+' €')+'\nOrigen del precio: '+(r.priceSource==='search-snippet'?'fragmento del buscador, pendiente de verificar en la tienda':'no detectado')+'\nResumen: '+(r.snippet||'Sin descripción disponible')}).join('\n\n')}
  window.JarvisWeb={detect,search,inspect,readPage,evidence,selectResearchPages,researchEvidence,getLocation,setLocation,locationCommand};
