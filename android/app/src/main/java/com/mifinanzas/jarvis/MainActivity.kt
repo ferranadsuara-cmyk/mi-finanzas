@@ -1,6 +1,7 @@
 package com.mifinanzas.jarvis
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.Manifest
 import android.content.pm.PackageManager
 import android.speech.RecognizerIntent
@@ -321,7 +322,7 @@ class MainActivity : Activity() {
 
     inner class NativeJarvisBridge {
         @JavascriptInterface
-        fun startListening() { runOnUiThread { voiceSessionActive = true; voiceHandler.removeCallbacks(voiceRetry); startVoiceRecognition() } }
+        fun startListening() { runOnUiThread { requestVoiceConsentAndStart() } }
 
         @JavascriptInterface
         fun stopListening() { runOnUiThread { voiceSessionActive = false; pendingListen = false; voiceHandler.removeCallbacks(voiceRetry); speechRecognizer?.cancel(); deliverSpeechState("idle", "Conversación por voz detenida.") } }
@@ -514,6 +515,31 @@ class MainActivity : Activity() {
                 voiceOutputDescription = "voz no disponible; revisa el motor de síntesis de Android"
             }
         }
+    }
+
+    private fun requestVoiceConsentAndStart() {
+        if (voiceSessionActive) {
+            voiceHandler.removeCallbacks(voiceRetry)
+            startVoiceRecognition()
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Activar voz online")
+            .setMessage("Para ofrecer reconocimiento y síntesis de voz de mayor calidad, el servicio de voz instalado en Android puede procesar el audio que hablas y el texto de las respuestas. Ese tratamiento depende del proveedor y de sus condiciones de privacidad. La conversación financiera sigue usando J.A.R.V.I.S.; no envíes por voz datos que no quieras compartir con el proveedor de voz. ¿Quieres continuar?")
+            .setNegativeButton("Ahora no") { _, _ ->
+                voiceSessionActive = false
+                deliverSpeechState("cancelled", "No se ha activado la voz online.")
+            }
+            .setPositiveButton("Continuar") { _, _ ->
+                voiceSessionActive = true
+                voiceHandler.removeCallbacks(voiceRetry)
+                startVoiceRecognition()
+            }
+            .setOnCancelListener {
+                voiceSessionActive = false
+                deliverSpeechState("cancelled", "No se ha activado la voz online.")
+            }
+            .show()
     }
 
     private fun startVoiceRecognition() {
