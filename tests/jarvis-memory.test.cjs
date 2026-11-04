@@ -116,3 +116,37 @@ test('guarda y recupera conversaciones favoritas y las exporta', () => {
   assert.equal(restored.listStarredConversations().length, 1);
   assert.equal(restored.unstarConversation(result.conversation.id), 1);
 });
+
+
+test('aprende una preferencia de estilo cuando el usuario la repite', () => {
+  const memory = createMemory();
+  const first = memory.learnFromCorrection('No, hazlo más breve.');
+  assert.equal(first.recognized, true);
+  assert.equal(first.saved, false);
+  const second = memory.learnFromCorrection('Te lo he pedido más breve.');
+  assert.equal(second.saved, true);
+  assert.match(memory.context(500, '¿Cómo prefiero las respuestas?'), /breves y directas/);
+});
+
+test('guarda inmediatamente una preferencia formulada como regla futura', () => {
+  const memory = createMemory();
+  const result = memory.learnFromCorrection('A partir de ahora, explícamelo siempre paso a paso.');
+  assert.equal(result.saved, true);
+  assert.match(memory.context(500, '¿Cómo quiero que me expliques las cosas?'), /paso a paso/);
+});
+
+test('actualiza una preferencia de estilo anterior cuando el usuario cambia de opinión', () => {
+  const memory = createMemory();
+  memory.learnFromCorrection('A partir de ahora, responde más breve.');
+  const changed = memory.learnFromCorrection('A partir de ahora, dame explicaciones más detalladas.');
+  assert.equal(changed.saved, true);
+  assert.match(memory.context(500, '¿Cómo prefiero las respuestas?'), /detalladas/);
+  assert.doesNotMatch(memory.context(500, '¿Cómo prefiero las respuestas?'), /breves/);
+});
+
+test('no convierte correcciones puntuales en preferencias permanentes', () => {
+  const memory = createMemory();
+  assert.equal(memory.learnFromCorrection('No, ese cálculo está mal.').recognized, false);
+  assert.equal(memory.learnFromCorrection('Dame un ejemplo diferente.').recognized, false);
+  assert.equal(memory.list().length, 0);
+});
