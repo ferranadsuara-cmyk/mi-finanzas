@@ -13,6 +13,7 @@ test('detecta búsquedas web y comparación de precios',()=>{
  assert.equal(web.detect('Compara precios de una cafetera DeLonghi').query,'una cafetera DeLonghi');
  assert.equal(web.detect('¿Qué tiempo hace?'),null);
  assert.equal(web.detect('Compara mis gastos con el mes anterior'),null);
+ assert.equal(web.detect('Busca información sobre cómo funciona un robot aspirador').shopping,false);
 });
 test('formatea resultados como evidencia con URL',()=>{
  const out=web.evidence({results:[{title:'Tienda',url:'https://shop.example',snippet:'Oferta 49 €'}]});
