@@ -20,6 +20,8 @@ import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.asCoroutineDispatcher
+import java.util.concurrent.Executors
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -28,6 +30,10 @@ import org.json.JSONObject
 
 class MainActivity : Activity() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    // LiteRT-LM requires Engine and Conversation operations to share one owner thread.
+    private val engineDispatcher = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "jarvis-litert-engine")
+    }.asCoroutineDispatcher()
     private val expectedBytes = 2_588_147_712L
     private val modelName = "gemma-4-E2B-it.litertlm"
     private val modelUrl = "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/" + modelName
@@ -43,9 +49,9 @@ class MainActivity : Activity() {
     private lateinit var rootLayout: LinearLayout
     private var fileChooserCallback: android.webkit.ValueCallback<Array<Uri>>? = null
     private val fileChooserRequest = 4107
-    private var engine: Engine? = null
-    private var conversation: Conversation? = null
-    private var busy = false
+    @Volatile private var engine: Engine? = null
+    @Volatile private var conversation: Conversation? = null
+    @Volatile private var busy = false
     private val modelFile: File
         get() = File(getExternalFilesDir(null) ?: filesDir, modelName)
 
@@ -232,18 +238,19 @@ class MainActivity : Activity() {
         status.text = "Inicializando LiteRT-LM…"
         scope.launch {
             try {
-                withContext(Dispatchers.IO) {
+                withContext(engineDispatcher) {
+                    // Do not close an Engine whose initialize() failed; LiteRT-LM forbids it.
                     val gpu = Engine(EngineConfig(
                         modelPath = modelFile.absolutePath,
                         backend = Backend.GPU(),
                         cacheDir = cacheDir.absolutePath
                     ))
-                    try {
+                    val activeEngine = try {
                         gpu.initialize()
                         engine = gpu
                         withContext(Dispatchers.Main) { status.text = "Gemma cargado con GPU." }
+                        gpu
                     } catch (gpuError: Exception) {
-                        gpu.close()
                         val cpu = Engine(EngineConfig(
                             modelPath = modelFile.absolutePath,
                             backend = Backend.CPU(),
@@ -254,11 +261,12 @@ class MainActivity : Activity() {
                         withContext(Dispatchers.Main) {
                             status.text = "Gemma cargado con CPU (GPU no disponible)."
                         }
+                        cpu
                     }
-                    conversation = engine!!.createConversation(
+                    conversation = activeEngine.createConversation(
                         ConversationConfig(
                             systemInstruction = Contents.of(
-                                "Eres J.A.R.V.I.S., un asistente útil, preciso y natural. Responde en español salvo que el usuario pida otro idioma. Si no sabes algo, dilo con claridad."
+                                "Eres J.A.R.V.I.S., el asistente integrado de Mi Finanzas. Responde en español salvo que el usuario pida otro idioma. Distingue los datos reales de las estimaciones, no inventes movimientos, precios, stock ni fuentes. Para operaciones financieras usa las herramientas deterministas de la aplicación y solicita confirmación antes de crear, modificar o borrar datos."
                             )
                         )
                     )
@@ -330,7 +338,7 @@ class MainActivity : Activity() {
             scope.launch {
                 try {
                     val conv = conversation ?: throw IllegalStateException("Gemma no está cargado.")
-                    val answer = withContext(Dispatchers.IO) {
+                    val answer = withContext(engineDispatcher) {
                         val output = StringBuilder()
                         conv.sendMessageAsync(promptText).collect { message ->
                             output.append(message.toString())
@@ -379,7 +387,7 @@ class MainActivity : Activity() {
         scope.launch {
             try {
                 val conv = conversation ?: throw IllegalStateException("Carga primero el modelo.")
-                withContext(Dispatchers.IO) {
+                withContext(engineDispatcher) {
                     conv.sendMessageAsync(text).collect { message ->
                         val part = message.toString()
                         if (part.isNotEmpty()) {
@@ -401,9 +409,22 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         fileChooserCallback?.onReceiveValue(null)
-        scope.cancel()
-        conversation?.close()
-        engine?.close()
+        // Close Conversation before Engine, on the same single owner thread used for inference.
+        scope.launch(engineDispatcher) {
+            try {
+                conversation?.let {
+                    it.close()
+                    conversation = null
+                }
+                engine?.let {
+                    it.close()
+                    engine = null
+                }
+            } finally {
+                engineDispatcher.close()
+                scope.cancel()
+            }
+        }
         super.onDestroy()
     }
 }
