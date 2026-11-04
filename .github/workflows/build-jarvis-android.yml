@@ -7,6 +7,8 @@ on:
       - "index.html"
       - "jarvis-memory.js"
       - "jarvis-tools.js"
+      - "jarvis-web.js"
+      - "api/**"
       - "sw.js"
       - "tests/**"
       - ".github/workflows/build-jarvis-android.yml"
@@ -30,6 +32,14 @@ jobs:
         run: node --check jarvis-tools.js
       - name: Test JARVIS tools
         run: node --test tests/jarvis-tools.test.cjs
+      - name: Check web search API syntax
+        run: node --check api/jarvis-search.js
+      - name: Test web search API
+        run: node --test tests/jarvis-search.test.cjs
+      - name: Check JARVIS web module syntax
+        run: node --check jarvis-web.js
+      - name: Test JARVIS web module
+        run: node --test tests/jarvis-web.test.cjs
       - name: Check inline application scripts
         run: node tests/check-inline-scripts.cjs
       - name: Build debug APK
