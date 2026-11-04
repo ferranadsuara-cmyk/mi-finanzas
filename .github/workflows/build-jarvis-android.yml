@@ -7,6 +7,7 @@ on:
       - "index.html"
       - "jarvis-memory.js"
       - "sw.js"
+      - "tests/**"
       - ".github/workflows/build-jarvis-android.yml"
 jobs:
   build:
@@ -24,6 +25,8 @@ jobs:
         run: node --check jarvis-memory.js
       - name: Test JARVIS memory module
         run: node --test tests/jarvis-memory.test.cjs
+      - name: Check inline application scripts
+        run: node tests/check-inline-scripts.cjs
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
         working-directory: android
