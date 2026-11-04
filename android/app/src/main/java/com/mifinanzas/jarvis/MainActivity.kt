@@ -238,7 +238,7 @@ class MainActivity : Activity() {
                 val conv = conversation ?: throw IllegalStateException("Carga primero el modelo.")
                 withContext(Dispatchers.IO) {
                     conv.sendMessageAsync(text).collect { message ->
-                        val part = message.text
+                        val part = message.toString()
                         if (part.isNotEmpty()) {
                             withContext(Dispatchers.Main) { transcript.append(part) }
                         }
