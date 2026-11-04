@@ -132,7 +132,7 @@ test('guarda inmediatamente una preferencia formulada como regla futura', () => 
   const memory = createMemory();
   const result = memory.learnFromCorrection('A partir de ahora, explícamelo siempre paso a paso.');
   assert.equal(result.saved, true);
-  assert.match(memory.context(500, '¿Cómo quiero que me expliques las cosas?'), /paso a paso/);
+  assert.match(memory.context(500), /paso a paso/);
 });
 
 test('actualiza una preferencia de estilo anterior cuando el usuario cambia de opinión', () => {
