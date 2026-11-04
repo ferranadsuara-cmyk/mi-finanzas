@@ -37,3 +37,10 @@ test('clasifica documentos por coincidencia con la consulta', () => {
   const docs = createDocuments();
   assert.ok(docs.rankText('Balance anual de ingresos y gastos','ingresos') > docs.rankText('Acta de reunión del equipo','ingresos'));
 });
+
+test('expone exportación y restauración para incluir archivos en la copia completa', () => {
+  const docs = createDocuments();
+  assert.equal(typeof docs.exportData, 'function');
+  assert.equal(typeof docs.importData, 'function');
+  assert.equal(docs.limits.maxFileBytes, 20*1024*1024);
+});
