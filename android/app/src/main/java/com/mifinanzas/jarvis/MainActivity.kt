@@ -332,7 +332,7 @@ class MainActivity : Activity() {
                     val conv = conversation ?: throw IllegalStateException("Gemma no está cargado.")
                     val answer = withContext(Dispatchers.IO) {
                         val output = StringBuilder()
-                        conv.sendMessageAsync(Contents.of(promptText)).collect { message ->
+                        conv.sendMessageAsync(promptText).collect { message ->
                             output.append(message.toString())
                         }
                         output.toString()
