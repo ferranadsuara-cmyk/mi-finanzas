@@ -5,6 +5,8 @@ on:
     paths:
       - "android/**"
       - "index.html"
+      - "jarvis-memory.js"
+      - "sw.js"
       - ".github/workflows/build-jarvis-android.yml"
 jobs:
   build:
